@@ -1,0 +1,30 @@
+{
+  "weights": {
+    "person_overlap": 0.22,
+    "vehicle_overlap": 0.18,
+    "object_overlap": 0.12,
+    "location_proximity": 0.12,
+    "temporal_proximity": 0.12,
+    "modus_operandi_similarity": 0.14,
+    "event_sequence_similarity": 0.10,
+    "semantic_similarity": 0.08,
+    "witness_overlap": 0.08,
+    "tag_overlap": 0.04
+  },
+  "thresholds": {
+    "minimum_confidence_for_ui": 0.40,
+    "strong_confidence": 0.75,
+    "moderate_confidence": 0.55,
+    "weak_confidence": 0.35,
+    "geographic_nearby_km": 15.0,
+    "temporal_window_days": 45,
+    "temporal_decay_half_life_days": 10,
+    "candidate_generation_prefilter_active": true
+  },
+  "category_definitions": {
+    "DIRECT": "Shared direct identifiers such as person, vehicle, or serial-matched object",
+    "STRONG": "High multi-factor correlation across MO, timeline, location, or behavioral sequence",
+    "MODERATE": "Notable overlapping context, geographic proximity, or behavioral similarities",
+    "WEAK": "Indicative similarities warranting exploratory review"
+  }
+}
