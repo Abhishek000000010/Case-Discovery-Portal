@@ -1,51 +1,37 @@
-export interface PersonEntity {
-  person_id: string;
+export interface CityEntity {
+  city_id: string;
   name: string;
-  aliases: string[];
-  occupation?: string;
-  home_location_id?: string;
-  home_location_name?: string;
-  owned_vehicles?: string[];
-  case_count?: number;
-  cases?: string[];
-  role_distribution?: Record<string, number>;
-  is_potential_anomaly?: boolean;
-  anomaly_label?: string;
-  investigative_notes?: string[];
+  case_count: number;
+  cases_closed?: number;
+  open_cases?: number;
+  closure_rate?: number;
+  top_crime?: string;
 }
 
-export interface LocationEntity {
-  location_id: string;
+export interface CrimeDescriptionEntity {
+  crime_id: string;
   name: string;
-  city?: string;
-  state?: string;
-  latitude?: number;
-  longitude?: number;
-  type?: string;
-  case_count?: number;
-  cases?: string[];
+  case_count: number;
+  top_city?: string;
+  top_weapon?: string;
 }
 
-export interface VehicleEntity {
-  vehicle_id: string;
-  registration?: string;
-  type?: string;
-  color?: string;
-  owner_person_id?: string;
-  owner_name?: string;
-  case_count?: number;
-  cases?: string[];
-  role_distribution?: Record<string, number>;
-  is_potential_anomaly?: boolean;
-  anomaly_label?: string;
-  investigative_notes?: string[];
+export interface WeaponEntity {
+  weapon_id: string;
+  name: string;
+  case_count: number;
+  top_crime?: string;
 }
 
-export interface ObjectEntity {
-  object_id: string;
-  type?: string;
-  description?: string;
-  serial_number?: string;
-  case_count?: number;
-  cases?: string[];
+export interface CrimeDomainEntity {
+  domain_id: string;
+  name: string;
+  case_count: number;
+}
+
+export interface CrimeCodeEntity {
+  crime_id: string;
+  crime_code: number;
+  case_count: number;
+  descriptions?: string[];
 }

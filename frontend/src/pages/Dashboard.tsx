@@ -1,20 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import {
   FolderGit2,
-  Users,
-  MapPin,
-  Car,
-  Share2,
-  AlertTriangle,
-  Flame,
+  Building2,
+  ShieldAlert,
+  Wrench,
+  CheckCircle2,
+  Clock,
   Compass,
   ArrowRight,
   TrendingUp,
+  Layers,
+  ShieldCheck,
+  AlertTriangle,
 } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, AreaChart, Area, RadialBarChart, RadialBar, Legend, Sector
+} from 'recharts';
 import { StatCard } from '../components/StatCard';
 import { RelationshipCard } from '../components/RelationshipCard';
-import { fetchStats, fetchPatterns, fetchCaseRelationships } from '../services/api';
-import { RelationshipExplanation } from '../types/relationship';
+import { RelationshipDetailDrawer } from '../components/RelationshipDetailDrawer';
+import { fetchStats, fetchAnalytics, fetchPatterns, fetchCaseRelationships } from '../services/api';
+import { RelationshipExplanation, CasePattern } from '../types/relationship';
 
 interface DashboardProps {
   onSelectCase: (caseId: string) => void;
@@ -23,28 +30,67 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ onSelectCase, onNavigate }) => {
   const [stats, setStats] = useState<any>(null);
-  const [patterns, setPatterns] = useState<any[]>([]);
-  const [topRelationships, setTopRelationships] = useState<RelationshipExplanation[]>([]);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [patterns, setPatterns] = useState<CasePattern[]>([]);
+  const [sampleRels, setSampleRels] = useState<RelationshipExplanation[]>([]);
+  const [investigationPair, setInvestigationPair] = useState<{
+    sourceId: string | null;
+    targetId: string | null;
+    isOpen: boolean;
+  }>({ sourceId: null, targetId: null, isOpen: false });
   const [loading, setLoading] = useState(true);
+  const [activeWeaponIndex, setActiveWeaponIndex] = useState(0);
+
+  const renderActiveShape = (props: any) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
+    return (
+      <g>
+        <text x={cx} y={cy - 10} dy={8} textAnchor="middle" fill={fill} style={{ fontSize: '15px', fontWeight: 800 }}>
+          {payload.weapon}
+        </text>
+        <text x={cx} y={cy + 15} dy={8} textAnchor="middle" fill="#64748b" style={{ fontSize: '13px', fontWeight: 600 }}>
+          {`${(percent * 100).toFixed(1)}%`}
+        </text>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 8}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          innerRadius={outerRadius + 12}
+          outerRadius={outerRadius + 16}
+          fill={fill}
+        />
+      </g>
+    );
+  };
 
   useEffect(() => {
     async function loadDashboard() {
       try {
         setLoading(true);
-        const [statsData, patternsData] = await Promise.all([
+        const [statsData, analyticsData, patternsData] = await Promise.all([
           fetchStats(),
+          fetchAnalytics(),
           fetchPatterns(),
         ]);
         setStats(statsData);
+        setAnalytics(analyticsData);
         setPatterns(patternsData);
 
-        // Fetch sample high confidence relationships for display
-        if (statsData.total_cases > 0) {
-          const sampleRels = await fetchCaseRelationships('CASE003', 0.70);
-          setTopRelationships(sampleRels.slice(0, 4));
-        }
+        // Load sample relationships for representative first case
+        const rels = await fetchCaseRelationships('IND-CASE-00001', 0.50, 4);
+        setSampleRels(rels);
       } catch (err) {
-        console.error(err);
+        console.error('Failed to load dashboard:', err);
       } finally {
         setLoading(false);
       }
@@ -55,8 +101,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCase, onNavigate }
   if (loading || !stats) {
     return (
       <div className="page-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <div style={{ color: 'var(--text-accent)', fontFamily: 'var(--font-mono)' }}>
-          Loading intelligence metrics and graph relationships...
+        <div style={{ color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>
+          Loading real crime intelligence metrics across 40,160 cases...
         </div>
       </div>
     );
@@ -64,212 +110,331 @@ export const Dashboard: React.FC<DashboardProps> = ({ onSelectCase, onNavigate }
 
   return (
     <div className="page-wrapper animate-fade-in">
-      {/* Page Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <Flame size={22} color="var(--accent-cyan)" />
-            <span>Intelligence Operations Center</span>
-          </h1>
-          <p className="page-subtitle">
-            Autonomous multi-relational case relationship discovery & entity resolution platform.
-          </p>
+      {/* Provenance & Neutrality Banner */}
+      <div style={{
+        backgroundColor: '#f8fafc',
+        border: '1px solid var(--border-medium)',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        marginBottom: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '10px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <ShieldCheck size={20} color="#0284c7" />
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              Data Source: Indian Crimes Dataset (Kaggle / Public Data)
+            </div>
+            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+              Data Type: Public Dataset Records • Synthetic Records in Primary Dataset: None • Municipal Jurisdictions: 29
+            </div>
+          </div>
         </div>
 
-        <button
-          onClick={() => onNavigate('cases')}
-          className="btn btn-primary"
-        >
-          <span>Browse Case Repository</span>
-          <ArrowRight size={14} />
-        </button>
+        <div style={{
+          fontSize: '11px',
+          fontWeight: 600,
+          backgroundColor: '#eff6ff',
+          color: '#1d4ed8',
+          border: '1px solid #bfdbfe',
+          padding: '4px 10px',
+          borderRadius: '16px',
+        }}>
+          Decision-Support & Relationship Discovery
+        </div>
       </div>
 
-      {/* Primary Metrics Grid */}
-      <div className="grid-stats">
+      {/* Header */}
+      <div className="page-header" style={{ marginBottom: '20px' }}>
+        <div>
+          <h1 className="page-title">Executive Investigative Dashboard</h1>
+          <p className="page-subtitle">
+            Dynamic intelligence and multi-signal relationship discovery across {stats.total_cases?.toLocaleString()} real Indian crime incident records.
+          </p>
+        </div>
+      </div>
+
+      {/* Primary KPI Metrics Grid */}
+      <div className="grid grid-cols-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '20px' }}>
         <StatCard
-          title="Total Cases Indexed"
-          value={stats.total_cases}
-          subtitle="Structured case records"
+          title="Total Case Records"
+          value={stats.total_cases?.toLocaleString() || '0'}
+          subtitle="Real Indian incidents"
           icon={FolderGit2}
-          color="var(--entity-case)"
+          color="cyan"
         />
         <StatCard
-          title="Persons of Interest"
-          value={stats.total_persons}
-          subtitle="Resolved identity profiles"
-          icon={Users}
-          color="var(--entity-person)"
+          title="Municipal Jurisdictions"
+          value={stats.total_cities || '0'}
+          subtitle={`Most active: ${stats.most_active_city?.name || 'N/A'}`}
+          icon={Building2}
+          color="emerald"
         />
         <StatCard
-          title="Jurisdiction Locations"
-          value={stats.total_locations}
-          subtitle="Co-located geocoded scenes"
-          icon={MapPin}
-          color="var(--entity-location)"
+          title="Crime Classifications"
+          value={stats.total_crime_types || '0'}
+          subtitle={`Most common: ${stats.most_common_crime?.name || 'N/A'}`}
+          icon={ShieldAlert}
+          color="amber"
         />
         <StatCard
-          title="Vehicles Profiled"
-          value={stats.total_vehicles}
-          subtitle="Tracked transport units"
-          icon={Car}
-          color="var(--entity-vehicle)"
-        />
-        <StatCard
-          title="Discovered Relationships"
-          value={stats.total_relationships}
-          subtitle={`${stats.high_confidence_relationships} high confidence links`}
-          icon={Share2}
-          color="var(--accent-indigo)"
-          badge="AUTOMATED"
-        />
-        <StatCard
-          title="Potential Recurrences"
-          value={stats.potential_anomalies_count}
-          subtitle="Cross-incident frequency flags"
-          icon={AlertTriangle}
-          color="var(--accent-amber)"
-          badge="REVIEW"
+          title="Case Closure Rate"
+          value={`${stats.closure_rate_percent || 0}%`}
+          subtitle={`${stats.cases_closed?.toLocaleString()} Closed • ${stats.open_cases?.toLocaleString()} Open`}
+          icon={CheckCircle2}
+          color="blue"
         />
       </div>
 
-      {/* Two Column Layout: Discovered Behavioral Patterns & High-Confidence Relationships */}
-      <div className="grid-two-col">
-        {/* Left Column: Discovered Crime Patterns & Clusters */}
+      {/* Secondary Operational Metrics Grid */}
+      <div className="grid grid-cols-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <StatCard
+          title="Crime Domains"
+          value={stats.total_crime_domains || '4'}
+          subtitle="Violent, Property, Cyber, Other"
+          icon={Layers}
+          color="indigo"
+        />
+        <StatCard
+          title="Weapon Categories"
+          value={stats.total_weapons || '6'}
+          subtitle="De-duplicated categories"
+          icon={Wrench}
+          color="rose"
+        />
+        <StatCard
+          title="Avg Investigation Closure"
+          value={`${stats.average_closure_duration_days || 0} days`}
+          subtitle="Incident to resolution duration"
+          icon={Clock}
+          color="purple"
+        />
+        <StatCard
+          title="Avg Report Delay"
+          value={`${stats.average_report_delay_hours || 0} hrs`}
+          subtitle={`Peak month: ${stats.highest_crime_month?.name || 'N/A'}`}
+          icon={TrendingUp}
+          color="cyan"
+        />
+      </div>
+
+      {/* Analytics Visual Breakdown Grid */}
+      {analytics && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '24px' }}>
+          {/* Top Municipal Jurisdictions */}
+          <div className="glass-panel" style={{ padding: '18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Building2 size={16} color="var(--accent-emerald)" />
+                <span>Crime Distribution by Municipal Jurisdiction</span>
+              </div>
+              <button
+                onClick={() => onNavigate('entities')}
+                className="btn btn-ghost"
+                style={{ fontSize: '11px', padding: '2px 6px' }}
+              >
+                View All
+              </button>
+            </div>
+
+            <div style={{ height: '200px', marginTop: '10px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analytics.top_cities?.slice(0, 6)} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="city" type="category" width={80} tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                  <RechartsTooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '12px' }} />
+                  <Bar dataKey="count" fill="var(--accent-emerald)" radius={[0, 4, 4, 0]} barSize={16} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Top Crime Types */}
+          <div className="glass-panel" style={{ padding: '18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldAlert size={16} color="var(--accent-amber)" />
+                <span>Top Crime Classifications</span>
+              </div>
+              <button
+                onClick={() => onNavigate('entities')}
+                className="btn btn-ghost"
+                style={{ fontSize: '11px', padding: '2px 6px' }}
+              >
+                View All
+              </button>
+            </div>
+
+            <div style={{ height: '200px', marginTop: '10px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analytics.top_crimes?.slice(0, 6)} layout="horizontal" margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="crime" type="category" tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} interval={0} tickFormatter={(val) => val.length > 10 ? val.substring(0,10)+'...' : val} />
+                  <YAxis type="number" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                  <RechartsTooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '12px' }} />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={24}>
+                    {analytics.top_crimes?.slice(0, 6).map((entry: any, index: number) => {
+                      const colors = ['#f59e0b', '#fcd34d', '#fbbf24', '#f87171', '#ef4444', '#b91c1c'];
+                      return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Weapon Deployments */}
+          <div className="glass-panel" style={{ padding: '18px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Wrench size={16} color="var(--accent-rose)" />
+              <span>Weapon Deployment Breakdown</span>
+            </div>
+            <div style={{ height: '200px', marginTop: '10px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                  <Pie
+                    data={analytics.weapons}
+                    dataKey="count"
+                    nameKey="weapon"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={80}
+                    paddingAngle={4}
+                  >
+                    {analytics.weapons?.map((entry: any, index: number) => {
+                      const colors = ['#f43f5e', '#fb923c', '#fbbf24', '#a3e635', '#2dd4bf', '#818cf8'];
+                      return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                    })}
+                  </Pie>
+                  <RechartsTooltip contentStyle={{ borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '12px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Time of Day Distribution */}
+          <div className="glass-panel" style={{ padding: '18px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Clock size={16} color="var(--accent-cyan)" />
+              <span>Incident Occurrences by Hour of Day (24h Clock)</span>
+            </div>
+            <div style={{ height: '200px', marginTop: '10px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={analytics.hourly_distribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--accent-cyan)" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="var(--accent-cyan)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="hour" tickFormatter={(v) => `${v}h`} tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                  <RechartsTooltip cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '3 3' }} contentStyle={{ borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '12px' }} />
+                  <Area type="monotone" dataKey="count" stroke="var(--accent-cyan)" fillOpacity={1} fill="url(#colorCount)" strokeWidth={3} activeDot={{ r: 6, fill: 'var(--accent-cyan)', stroke: '#fff', strokeWidth: 2 }} animationDuration={1500} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recurrent Patterns & Sample Discovered Relationships */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        {/* Recurrent Patterns Column */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Compass size={17} color="var(--accent-cyan)" />
-              <span>Dynamically Discovered Case Series & Patterns</span>
-            </h2>
+              <span>Discovered Recurrent Incident Patterns</span>
+            </div>
             <button
               onClick={() => onNavigate('patterns')}
               className="btn btn-ghost"
-              style={{ fontSize: '12px' }}
+              style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
             >
               <span>View All</span>
               <ArrowRight size={13} />
             </button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {patterns.slice(0, 4).map((pat) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {patterns.slice(0, 3).map((pat) => (
               <div
                 key={pat.pattern_id}
                 className="glass-panel"
-                style={{ padding: '16px 18px', borderLeft: '3px solid var(--accent-cyan)' }}
+                style={{ padding: '14px', cursor: 'pointer' }}
+                onClick={() => onNavigate('patterns')}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                  <span style={{
-                    fontSize: '10px',
-                    fontFamily: 'var(--font-mono)',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    color: '#0369a1',
-                    padding: '2px 7px',
-                    backgroundColor: '#e0f2fe',
-                    borderRadius: '4px',
-                  }}>
-                    {pat.category}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--accent-cyan)' }}>
+                    {pat.pattern_id}
                   </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                    Confidence: {(pat.confidence * 100).toFixed(0)}%
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#15803d', backgroundColor: '#f0fdf4', padding: '1px 6px', borderRadius: '4px' }}>
+                    {pat.case_count} Occurrences
                   </span>
                 </div>
-
-                <div style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                  {pat.title}
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  {pat.name}
                 </div>
-
-                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                   {pat.description}
-                </p>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Related Cases:</span>
-                  {pat.case_ids.map((cid: string) => (
-                    <button
-                      key={cid}
-                      onClick={() => onSelectCase(cid)}
-                      style={{
-                        fontSize: '11px',
-                        padding: '2px 7px',
-                        borderRadius: '4px',
-                        backgroundColor: '#f0f9ff',
-                        border: '1px solid #bae6fd',
-                        color: '#0284c7',
-                        fontFamily: 'var(--font-mono)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {cid}
-                    </button>
-                  ))}
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Right Column: High Confidence Discovered Links & Crime Mix */}
+        {/* Live Empirical Relationships Column */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <TrendingUp size={17} color="var(--accent-indigo)" />
-              <span>High-Confidence Relationship Alerts</span>
-            </h2>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              Sample Discovered Case Concordances
+            </div>
+            <button
+              onClick={() => onNavigate('cases')}
+              className="btn btn-ghost"
+              style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              <span>Explore Cases</span>
+              <ArrowRight size={13} />
+            </button>
           </div>
 
-          {topRelationships.length > 0 ? (
-            <div>
-              {topRelationships.map((rel, idx) => (
-                <RelationshipCard
-                  key={rel.relationship_id || idx}
-                  relationship={rel}
-                  onSelectCase={onSelectCase}
-                  onExploreGraph={(cid) => {
-                    onSelectCase(cid);
-                    onNavigate('graph');
-                  }}
-                />
-              ))}
-            </div>
+          {sampleRels.length > 0 ? (
+            sampleRels.map((rel) => (
+              <RelationshipCard
+                key={rel.relationship_id}
+                relationship={rel}
+                currentCaseId="IND-CASE-00001"
+                onSelectCase={onSelectCase}
+                onWhyRelated={(src, tgt) =>
+                  setInvestigationPair({ sourceId: src, targetId: tgt, isOpen: true })
+                }
+              />
+            ))
           ) : (
-            <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No relationships to display at this threshold.
+            <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+              Select a case in the repository to inspect all statistically discovered relationships.
             </div>
           )}
-
-          {/* Crime Distribution Summary */}
-          <div className="glass-panel" style={{ padding: '16px', marginTop: '14px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Indexed Crime Classifications
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {Object.entries(stats.crime_type_distribution || {}).map(([ctype, count]: any) => (
-                <div key={ctype}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px' }}>
-                    <span style={{ textTransform: 'capitalize', color: 'var(--text-secondary)' }}>
-                      {ctype.replace(/_/g, ' ')}
-                    </span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      {count}
-                    </span>
-                  </div>
-                  <div style={{ height: '4px', backgroundColor: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${(count / stats.total_cases) * 100}%`,
-                      backgroundColor: 'var(--accent-cyan)',
-                      borderRadius: '2px',
-                    }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
+
+      {/* Forensic Relationship Investigation Layer */}
+      <RelationshipDetailDrawer
+        sourceCaseId={investigationPair.sourceId}
+        targetCaseId={investigationPair.targetId}
+        isOpen={investigationPair.isOpen}
+        onClose={() => setInvestigationPair((prev) => ({ ...prev, isOpen: false }))}
+        onSelectCase={onSelectCase}
+      />
     </div>
   );
 };

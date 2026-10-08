@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, MapPin, Users, Share2, ArrowRight } from 'lucide-react';
+import { Calendar, MapPin, Wrench, Shield, ArrowRight, User } from 'lucide-react';
 import { CaseModel } from '../types/case';
 
 interface CaseCardProps {
@@ -8,7 +8,14 @@ interface CaseCardProps {
 }
 
 export const CaseCard: React.FC<CaseCardProps> = ({ caseData, onSelect }) => {
-  const sev = (caseData.severity || 'medium').toLowerCase();
+  const isClosed = caseData.investigation?.case_closed;
+  const statusLabel = isClosed ? 'Closed' : 'Open';
+
+  const dateStr =
+    caseData.incident?.date_of_occurrence ||
+    caseData.incident?.time_of_occurrence ||
+    caseData.incident?.date_reported ||
+    'Unspecified date';
 
   return (
     <div
@@ -20,6 +27,7 @@ export const CaseCard: React.FC<CaseCardProps> = ({ caseData, onSelect }) => {
         justifyContent: 'space-between',
         cursor: 'pointer',
         position: 'relative',
+        transition: 'border-color 0.15s, box-shadow 0.15s',
       }}
       onClick={() => onSelect(caseData.case_id)}
     >
@@ -42,48 +50,71 @@ export const CaseCard: React.FC<CaseCardProps> = ({ caseData, onSelect }) => {
               backgroundColor: '#f1f5f9',
               color: 'var(--text-secondary)',
               fontWeight: 600,
-              textTransform: 'capitalize',
             }}>
-              {caseData.case_type.replace(/_/g, ' ')}
+              Code {caseData.incident.crime_code}
             </span>
           </div>
 
-          <span className={`badge badge-${sev}`}>
-            {sev}
+          <span style={{
+            fontSize: '11px',
+            padding: '2px 8px',
+            borderRadius: '12px',
+            fontWeight: 600,
+            backgroundColor: isClosed ? '#f0fdf4' : '#fff7ed',
+            color: isClosed ? '#15803d' : '#c2410c',
+            border: isClosed ? '1px solid #bbf7d0' : '1px solid #fed7aa',
+          }}>
+            {statusLabel}
           </span>
         </div>
 
-        {/* Summary */}
-        <p style={{
-          fontSize: '13px',
-          color: 'var(--text-secondary)',
-          lineHeight: 1.5,
-          marginBottom: '14px',
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-        }}>
-          {caseData.summary}
-        </p>
+        {/* Crime Title & Domain */}
+        <div style={{ marginBottom: '10px' }}>
+          <h4 style={{
+            fontSize: '14px',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            margin: '0 0 2px 0',
+          }}>
+            {caseData.incident.crime_description}
+          </h4>
+          <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+            Domain: {caseData.incident.crime_domain}
+          </span>
+        </div>
 
-        {/* Metadata info */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+        {/* Structured Metadata info */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '8px',
+          fontSize: '12px',
+          color: 'var(--text-secondary)',
+          marginBottom: '14px',
+          backgroundColor: '#f8fafc',
+          padding: '10px',
+          borderRadius: '6px',
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <Calendar size={13} color="var(--accent-cyan)" />
-            <span>{caseData.incident_date || caseData.reported_date}</span>
+            <MapPin size={12} color="var(--accent-cyan)" />
+            <span>{caseData.location.city}</span>
           </div>
 
-          {caseData.location_names && caseData.location_names.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <MapPin size={13} color="var(--entity-location)" />
-              <span>{caseData.location_names[0]}</span>
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Calendar size={12} color="var(--accent-indigo)" />
+            <span>{dateStr.split('T')[0]}</span>
+          </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <Users size={13} color="var(--entity-person)" />
-            <span>{caseData.people_count ?? caseData.people_involved.length} people</span>
+            <Wrench size={12} color="var(--accent-amber)" />
+            <span>{caseData.weapon.used || 'None Specified'}</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <User size={12} color="var(--accent-emerald)" />
+            <span>
+              {caseData.victim.age ? `Age ${caseData.victim.age}` : 'Age ?'}, {caseData.victim.gender || 'Unknown'}
+            </span>
           </div>
         </div>
       </div>
@@ -96,9 +127,9 @@ export const CaseCard: React.FC<CaseCardProps> = ({ caseData, onSelect }) => {
         alignItems: 'center',
         justifyContent: 'space-between',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--accent-cyan)', fontWeight: 600 }}>
-          <Share2 size={13} />
-          <span>{caseData.related_cases_count ?? 0} Relationships</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text-muted)' }}>
+          <Shield size={12} />
+          <span>Report #{caseData.source.source_report_number} • {caseData.investigation.police_deployed ?? 0} Police Deployed</span>
         </div>
 
         <button
@@ -109,7 +140,7 @@ export const CaseCard: React.FC<CaseCardProps> = ({ caseData, onSelect }) => {
             onSelect(caseData.case_id);
           }}
         >
-          <span>Dossier</span>
+          <span>Inspect</span>
           <ArrowRight size={13} />
         </button>
       </div>

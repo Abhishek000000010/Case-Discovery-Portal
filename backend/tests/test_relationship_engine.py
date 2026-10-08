@@ -1,48 +1,60 @@
 import pytest
 from backend.app.state import app_state
 from backend.app.services.relationship_engine import RelationshipEngine
-from backend.app.config import DEFAULT_CONFIG
+from backend.app.config import load_relationship_config
 
 
-def test_engine_scores_strong_relationship():
-    engine = RelationshipEngine(DEFAULT_CONFIG)
-    cases = app_state.cases
-    entities = app_state.entities
+def test_engine_initializes_and_indexes():
+    weights = load_relationship_config()["weights"]
+    engine = RelationshipEngine(weights)
+    engine.index_corpus(app_state.cases)
 
-    c3 = app_state.case_map["CASE003"]
-    c4 = app_state.case_map["CASE004"]
-
-    rel = engine.score_case_pair(
-        c3, c4,
-        entities["location_map"],
-        entities["vehicle_map"],
-        entities["person_map"],
-        entities["object_map"]
-    )
-
-    assert rel is not None
-    assert rel.confidence >= 0.75
-    assert rel.category in ["DIRECT", "STRONG"]
-    assert len(rel.evidence) > 0
-    assert rel.score_breakdown.modus_operandi_similarity > 0.8
+    assert len(engine.city_index) == 29
+    assert len(engine.crime_code_index) > 0
+    assert len(engine.domain_index) == 4
 
 
-def test_engine_rejects_unrelated_cases():
-    engine = RelationshipEngine(DEFAULT_CONFIG)
-    entities = app_state.entities
+def test_candidate_retrieval_performance():
+    weights = load_relationship_config()["weights"]
+    engine = RelationshipEngine(weights)
+    engine.index_corpus(app_state.cases)
 
-    # Pick two distant cases with completely different types and no shared entities
-    c1 = app_state.case_map["CASE001"]
-    c_distant = [c for c in app_state.cases if c.case_type != "missing_person" and "bhiwandi" not in c.summary.lower()][-1]
+    first_case = app_state.cases[0]
+    candidate_indices = engine.get_candidate_case_indices(first_case, max_candidates=200)
 
-    rel = engine.score_case_pair(
-        c1, c_distant,
-        entities["location_map"],
-        entities["vehicle_map"],
-        entities["person_map"],
-        entities["object_map"]
-    )
+    assert len(candidate_indices) > 0
+    assert len(candidate_indices) <= 200
+    # First case index is 0, should not be in candidates
+    assert 0 not in candidate_indices
 
-    # Either no relationship or very weak below threshold
-    if rel is not None:
-        assert rel.confidence < 0.60
+
+def test_engine_scores_similar_incident_profile():
+    weights = load_relationship_config()["weights"]
+    engine = RelationshipEngine(weights)
+    engine.index_corpus(app_state.cases)
+
+    # Find two cases in Ahmedabad with the same crime code and weapon
+    cases_match = [c for c in app_state.cases if c.location.city == "Ahmedabad" and c.weapon.used is not None]
+    case_a = cases_match[0]
+    matching = [c for c in cases_match[1:] if c.incident.crime_code == case_a.incident.crime_code and c.weapon.used == case_a.weapon.used]
+
+    if matching:
+        case_b = matching[0]
+        rel = engine.compare_case_pair(case_a, case_b)
+        assert rel is not None
+        assert rel.confidence >= 0.50
+        assert rel.category in ["VERY HIGH", "HIGH", "MODERATE"]
+        assert len(rel.evidence) > 0
+        assert rel.score_breakdown.same_city == 1.0
+        assert rel.score_breakdown.crime_code_match == 1.0
+        assert rel.score_breakdown.weapon_match == 1.0
+
+
+def test_engine_ranks_relationships():
+    target_case_id = "IND-CASE-00001"
+    relationships = app_state.engine.get_related_cases(target_case_id, min_confidence=0.20, limit=10)
+
+    assert len(relationships) > 0
+    # Strictly descending order by confidence
+    confidences = [r.confidence for r in relationships]
+    assert confidences == sorted(confidences, reverse=True)

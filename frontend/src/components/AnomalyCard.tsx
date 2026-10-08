@@ -1,142 +1,89 @@
 import React from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { AlertTriangle, ArrowRight, MapPin, Shield } from 'lucide-react';
+import { AnomalyItem } from '../types/relationship';
 
 interface AnomalyCardProps {
-  anomaly: {
-    entity_type: string;
-    entity_id: string;
-    name?: string;
-    registration?: string;
-    case_count: number;
-    cases?: string[];
-    role_distribution?: Record<string, number>;
-    is_potential_anomaly: boolean;
-    anomaly_label?: string;
-    investigative_notes?: string[];
-  };
+  anomaly: AnomalyItem;
   onSelectCase: (caseId: string) => void;
-  onExploreGraph?: (entityId: string) => void;
 }
 
 export const AnomalyCard: React.FC<AnomalyCardProps> = ({
   anomaly,
   onSelectCase,
 }) => {
-  const title = anomaly.name || anomaly.registration || anomaly.entity_id;
-  const notes = anomaly.investigative_notes || [];
-  const cases = anomaly.cases || [];
-  const roleDistribution = anomaly.role_distribution || {};
+  const isHigh = anomaly.severity === 'HIGH';
+  const badgeColor = isHigh ? '#b91c1c' : '#b45309';
+  const badgeBg = isHigh ? '#fef2f2' : '#fef3c7';
+  const borderLeft = isHigh ? '3px solid #ef4444' : '3px solid #f59e0b';
 
   return (
-    <div className="glass-panel" style={{ padding: '16px', borderLeft: '3px solid #d97706' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-        <div>
+    <div className="glass-panel" style={{ padding: '16px', borderLeft, marginBottom: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{
-            fontSize: '10px',
+            fontSize: '10.5px',
             fontFamily: 'var(--font-mono)',
             fontWeight: 700,
             textTransform: 'uppercase',
-            color: '#92400e',
+            color: badgeColor,
             padding: '2px 7px',
-            backgroundColor: '#fef3c7',
+            backgroundColor: badgeBg,
             borderRadius: '4px',
-            marginRight: '8px',
           }}>
-            {anomaly.anomaly_label || 'POTENTIAL RECURRENCE ANOMALY'}
+            {anomaly.anomaly_type}
           </span>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            {anomaly.entity_type} {anomaly.entity_id}
+          <span style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--accent-cyan)',
+          }}>
+            {anomaly.case_id}
           </span>
         </div>
 
-        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-          {anomaly.case_count} Case Records
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+          Anomaly Score: {anomaly.score.toFixed(2)}
         </span>
       </div>
 
-      <div style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-        {title}
+      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
+        {anomaly.crime} • {anomaly.city}
       </div>
 
-      {/* Neutral Investigative Notes */}
-      {notes.length > 0 && (
-        <div style={{ marginBottom: '10px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-          {notes.map((note, idx) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
-              <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--accent-amber)' }} />
-              <span>{note}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 10px 0' }}>
+        {anomaly.reason}
+      </p>
 
-      {/* Role Distribution breakdown */}
-      {Object.keys(roleDistribution).length > 0 && (
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
-          {Object.entries(roleDistribution).map(([role, cnt]) => (
-            <span key={role} style={{
-              fontSize: '11px',
-              padding: '2px 7px',
-              backgroundColor: '#f8fafc',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '4px',
-              color: 'var(--text-secondary)',
-              fontFamily: 'var(--font-mono)',
-            }}>
-              {role}: <strong>{cnt}</strong>
+      {anomaly.details && (
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '10px',
+          backgroundColor: '#f8fafc',
+          padding: '8px 12px',
+          borderRadius: '5px',
+          fontSize: '11px',
+          color: 'var(--text-muted)',
+          marginBottom: '10px',
+        }}>
+          {Object.entries(anomaly.details).map(([k, v]) => (
+            <span key={k}>
+              <strong>{k.replace(/_/g, ' ')}:</strong> {String(v)}
             </span>
           ))}
         </div>
       )}
 
-      {/* Associated Cases */}
-      {cases.length > 0 && (
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '5px' }}>
-            Corroborating Cases ({cases.length})
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-            {cases.slice(0, 10).map((cid) => (
-              <button
-                key={cid}
-                onClick={() => onSelectCase(cid)}
-                style={{
-                  fontSize: '11px',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  backgroundColor: '#f0f9ff',
-                  border: '1px solid #bae6fd',
-                  color: '#0284c7',
-                  fontFamily: 'var(--font-mono)',
-                  cursor: 'pointer',
-                }}
-              >
-                {cid}
-              </button>
-            ))}
-            {cases.length > 10 && (
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', alignSelf: 'center' }}>
-                +{cases.length - 10} more
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Bottom info banner */}
-      <div style={{
-        padding: '6px 10px',
-        backgroundColor: '#f8fafc',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: '4px',
-        fontSize: '11px',
-        color: 'var(--text-muted)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-      }}>
-        <ShieldCheck size={13} color="var(--accent-cyan)" />
-        <span>Investigative decision-support indicator. High recurrence requires corroboration.</span>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          className="btn btn-secondary"
+          style={{ padding: '4px 10px', fontSize: '11px' }}
+          onClick={() => onSelectCase(anomaly.case_id)}
+        >
+          <span>Inspect Case File</span>
+          <ArrowRight size={12} />
+        </button>
       </div>
     </div>
   );

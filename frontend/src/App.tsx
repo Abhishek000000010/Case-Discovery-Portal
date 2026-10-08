@@ -7,17 +7,19 @@ import { CaseDetails } from './pages/CaseDetails';
 import { GraphExplorer } from './pages/GraphExplorer';
 import { Entities } from './pages/Entities';
 import { Patterns } from './pages/Patterns';
-import { Evaluation } from './pages/Evaluation';
-
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
-  const [graphFocusId, setGraphFocusId] = useState<string>('CASE003');
+  const [graphFocusId, setGraphFocusId] = useState<string>('IND-CASE-00001');
 
   const handleSelectCase = (caseId: string) => {
     setSelectedCaseId(caseId);
     setGraphFocusId(caseId);
-    setCurrentTab('case-detail');
+    if (caseId.startsWith('DETAIL-CASE')) {
+      setCurrentTab('intelligence-graph');
+    } else {
+      setCurrentTab('case-detail');
+    }
   };
 
   const handleExploreGraph = (entityOrCaseId: string) => {
@@ -36,7 +38,7 @@ export function App() {
         currentTab={currentTab}
         onSelectTab={(tab) => {
           if (tab === 'case-detail' && !selectedCaseId) {
-            setSelectedCaseId('CASE001');
+            setSelectedCaseId('IND-CASE-00001');
           }
           setCurrentTab(tab);
         }}
@@ -48,9 +50,8 @@ export function App() {
         {/* Global TopBar with Search */}
         <TopBar
           onSelectCase={handleSelectCase}
-          onNavigate={(tab) => setCurrentTab(tab)}
+          onNavigate={(tab) => setCurrentTab(tab as NavTab)}
           onRebuildComplete={() => {
-            // Trigger refresh if needed
             window.location.reload();
           }}
         />
@@ -59,25 +60,37 @@ export function App() {
         {currentTab === 'dashboard' && (
           <Dashboard
             onSelectCase={handleSelectCase}
-            onNavigate={(tab) => setCurrentTab(tab)}
+            onNavigate={(tab) => setCurrentTab(tab as NavTab)}
           />
         )}
 
         {currentTab === 'cases' && (
-          <Cases onSelectCase={handleSelectCase} />
+          <Cases
+            onSelectCase={handleSelectCase}
+            onExploreGraph={handleExploreGraph}
+          />
         )}
 
         {currentTab === 'case-detail' && (
           <CaseDetails
-            caseId={selectedCaseId || 'CASE001'}
-            onBack={handleBackToCases}
+            caseId={selectedCaseId || 'IND-CASE-00001'}
             onSelectCase={handleSelectCase}
+            onBack={handleBackToCases}
           />
         )}
 
         {currentTab === 'graph' && (
           <GraphExplorer
             initialCenterId={graphFocusId}
+            initialMode="network"
+            onSelectCase={handleSelectCase}
+          />
+        )}
+
+        {currentTab === 'intelligence-graph' && (
+          <GraphExplorer
+            initialCenterId={selectedCaseId || 'DETAIL-CASE-001'}
+            initialMode="intelligence"
             onSelectCase={handleSelectCase}
           />
         )}
@@ -93,12 +106,6 @@ export function App() {
           <Patterns
             onSelectCase={handleSelectCase}
             onExploreGraph={handleExploreGraph}
-          />
-        )}
-
-        {currentTab === 'evaluation' && (
-          <Evaluation
-            onSelectCase={handleSelectCase}
           />
         )}
       </div>

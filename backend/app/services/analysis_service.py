@@ -1,117 +1,120 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from collections import Counter
+import numpy as np
 from backend.app.models.case_models import CaseModel
-from backend.app.models.relationship_models import RelationshipExplanation
+from backend.app.models.entity_models import EntityListResponse
 from backend.app.services.anomaly_service import AnomalyService
+from backend.app.services.clustering_service import ClusteringService
 
 
 class AnalysisService:
     """
-    Computes global intelligence metrics, detects crime clusters, MO trends,
-    and formats investigative intelligence briefs dynamically.
+    Computes global intelligence metrics, empirical crime distributions,
+    temporal trends, victim demographics, and investigative anomaly summaries
+    strictly from the real Indian Crime dataset.
     """
 
     @staticmethod
     def get_summary_stats(
         cases: List[CaseModel],
-        entities: Dict[str, Any],
-        relationships: List[RelationshipExplanation]
+        entities: EntityListResponse,
+        anomalies_count: int = 0,
     ) -> Dict[str, Any]:
         total_cases = len(cases)
-        persons = len(entities.get("persons", []))
-        locations = len(entities.get("locations", []))
-        vehicles = len(entities.get("vehicles", []))
-        objects = len(entities.get("objects", []))
+        if total_cases == 0:
+            return {}
 
-        total_relationships = len(relationships)
-        high_conf = len([r for r in relationships if r.confidence >= 0.75])
-        moderate_conf = len([r for r in relationships if 0.55 <= r.confidence < 0.75])
-        weak_conf = len([r for r in relationships if r.confidence < 0.55])
+        closed_cases = sum(1 for c in cases if c.investigation.case_closed)
+        open_cases = total_cases - closed_cases
+        closure_rate = round((closed_cases / total_cases) * 100, 1)
 
-        anomalies = AnomalyService.get_all_anomalies(cases, entities)
+        city_counts = Counter(c.location.city for c in cases)
+        crime_counts = Counter(c.incident.crime_description for c in cases)
+        domain_counts = Counter(c.incident.crime_domain for c in cases)
+        weapon_counts = Counter(c.weapon.used or "None Specified" for c in cases)
+        month_counts = Counter(c.derived_features.occurrence_month_name for c in cases if c.derived_features.occurrence_month_name)
 
-        crime_types = dict(Counter([c.case_type for c in cases]))
-        severity_dist = dict(Counter([c.severity for c in cases]))
-        status_dist = dict(Counter([c.status for c in cases]))
+        durations = [c.investigation.closure_duration_days for c in cases if c.investigation.closure_duration_days is not None]
+        delays = [c.derived_features.report_delay_hours for c in cases if c.derived_features.report_delay_hours is not None]
+
+        most_common_crime = crime_counts.most_common(1)[0] if crime_counts else ("None", 0)
+        most_active_city = city_counts.most_common(1)[0] if city_counts else ("None", 0)
+        highest_crime_month = month_counts.most_common(1)[0] if month_counts else ("None", 0)
 
         return {
             "total_cases": total_cases,
-            "total_persons": persons,
-            "total_locations": locations,
-            "total_vehicles": vehicles,
-            "total_objects": objects,
-            "total_relationships": total_relationships,
-            "high_confidence_relationships": high_conf,
-            "moderate_confidence_relationships": moderate_conf,
-            "weak_confidence_relationships": weak_conf,
-            "potential_anomalies_count": len(anomalies),
-            "crime_type_distribution": crime_types,
-            "severity_distribution": severity_dist,
-            "status_distribution": status_dist
+            "total_cities": len(entities.cities),
+            "total_crime_types": len(entities.crime_descriptions),
+            "total_crime_codes": len(entities.crime_codes),
+            "total_crime_domains": len(entities.crime_domains),
+            "total_weapons": len(entities.weapons),
+            "cases_closed": closed_cases,
+            "open_cases": open_cases,
+            "closure_rate_percent": closure_rate,
+            "most_common_crime": {
+                "name": most_common_crime[0],
+                "count": most_common_crime[1],
+            },
+            "most_active_city": {
+                "name": most_active_city[0],
+                "count": most_active_city[1],
+            },
+            "highest_crime_month": {
+                "name": highest_crime_month[0],
+                "count": highest_crime_month[1],
+            },
+            "average_closure_duration_days": round(float(np.mean(durations)), 1) if durations else 0.0,
+            "average_report_delay_hours": round(float(np.mean(delays)), 1) if delays else 0.0,
+            "potential_anomalies_count": anomalies_count,
+            "provenance": {
+                "dataset": "Indian Crimes Dataset",
+                "source_file": "crime_dataset_india.csv",
+                "data_type": "Public Dataset Record",
+                "synthetic_records": 0,
+                "note": "Cleaned public dataset from Kaggle/NCRB data. Zero synthetic records.",
+            },
         }
 
     @staticmethod
-    def detect_patterns(
-        cases: List[CaseModel],
-        relationships: List[RelationshipExplanation],
-        entities: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
-        patterns = []
+    def get_analytics_breakdown(cases: List[CaseModel]) -> Dict[str, Any]:
+        """
+        Deep analytical distributions for the visual dashboard:
+        - Crime by city
+        - Crime by domain
+        - Crime by month & year
+        - Weapon distribution
+        - Time-of-day distribution
+        - Victim age & gender distribution
+        """
+        city_counts = Counter(c.location.city for c in cases)
+        crime_counts = Counter(c.incident.crime_description for c in cases)
+        domain_counts = Counter(c.incident.crime_domain for c in cases)
+        weapon_counts = Counter(c.weapon.used or "Unspecified" for c in cases)
 
-        # 1. MO Patterns: Find recurring combinations of modus operandi
-        mo_counter: Dict[str, List[str]] = {}
-        for c in cases:
-            if c.modus_operandi:
-                mo_key = " + ".join(sorted(c.modus_operandi[:3]))
-                mo_counter.setdefault(mo_key, []).append(c.case_id)
+        year_counts = Counter(c.derived_features.occurrence_year for c in cases if c.derived_features.occurrence_year)
+        month_order = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ]
+        raw_month_counts = Counter(c.derived_features.occurrence_month_name for c in cases if c.derived_features.occurrence_month_name)
+        month_distribution = [{"month": m, "count": raw_month_counts.get(m, 0)} for m in month_order]
 
-        for mo_key, cids in mo_counter.items():
-            if len(cids) >= 3 and mo_key:
-                patterns.append({
-                    "pattern_id": f"PAT_MO_{len(patterns) + 1}",
-                    "category": "Modus Operandi Pattern",
-                    "title": f"Repeated Modus Operandi ({len(cids)} incidents)",
-                    "description": f"Multiple cases exhibit signature behavioral technique: {mo_key}",
-                    "case_ids": cids,
-                    "confidence": 0.88,
-                    "tags": ["modus_operandi", "behavioral_series"]
-                })
+        # Time of day (hourly 0-23)
+        hourly_counts = Counter(c.derived_features.occurrence_hour for c in cases if c.derived_features.occurrence_hour is not None)
+        hour_distribution = [{"hour": h, "count": hourly_counts.get(h, 0)} for h in range(24)]
 
-        # 2. Location & Crime Type Clusters
-        loc_map = entities.get("location_map", {})
-        loc_crime_counter: Dict[Tuple[str, str], List[str]] = {}
-        for c in cases:
-            for l in c.locations:
-                loc_crime_counter.setdefault((l.location_id, c.case_type), []).append(c.case_id)
+        # Victim demographics
+        gender_counts = Counter(c.victim.gender for c in cases if c.victim.gender)
+        age_band_counts = Counter(c.victim.age_band for c in cases if c.victim.age_band)
 
-        for (loc_id, ctype), cids in loc_crime_counter.items():
-            if len(cids) >= 4:
-                loc_name = loc_map[loc_id].name if loc_id in loc_map else loc_id
-                patterns.append({
-                    "pattern_id": f"PAT_LOC_{len(patterns) + 1}",
-                    "category": "Geographic Cluster",
-                    "title": f"Spatial Concentration: {ctype.replace('_', ' ').title()}",
-                    "description": f"Cluster of {len(cids)} {ctype} incidents recorded in jurisdiction '{loc_name}'",
-                    "case_ids": cids,
-                    "confidence": 0.82,
-                    "tags": ["geographic_cluster", ctype, loc_name.lower()]
-                })
-
-        # 3. High-Confidence Cross-Incident Links (e.g. Missing person to Unidentified body or Same Vehicle Series)
-        top_cross_links = [
-            r for r in relationships
-            if r.confidence >= 0.80 and any("missing person" in ev.lower() or "same vehicle" in ev.lower() for ev in r.evidence)
-        ][:5]
-
-        for rel in top_cross_links:
-            patterns.append({
-                "pattern_id": f"PAT_LINK_{len(patterns) + 1}",
-                "category": "Investigative Link",
-                "title": f"Cross-Case Link: {rel.source_case} ↔ {rel.target_case}",
-                "description": "; ".join(rel.evidence[:3]),
-                "case_ids": [rel.source_case, rel.target_case],
-                "confidence": rel.confidence,
-                "tags": [rel.relationship_type, rel.category.lower()]
-            })
-
-        return patterns
+        return {
+            "top_cities": [{"city": k, "count": v} for k, v in city_counts.most_common(12)],
+            "crime_domains": [{"domain": k, "count": v} for k, v in domain_counts.most_common()],
+            "top_crimes": [{"crime": k, "count": v} for k, v in crime_counts.most_common(10)],
+            "weapons": [{"weapon": k, "count": v} for k, v in weapon_counts.most_common()],
+            "yearly_trend": [{"year": k, "count": v} for k, v in sorted(year_counts.items())],
+            "monthly_distribution": month_distribution,
+            "hourly_distribution": hour_distribution,
+            "victim_genders": [{"gender": k, "count": v} for k, v in gender_counts.most_common()],
+            "victim_age_bands": [{"age_band": k, "count": v} for k, v in age_band_counts.most_common()],
+        }

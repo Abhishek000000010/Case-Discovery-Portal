@@ -1,0 +1,2999 @@
+{
+  "metadata": {
+    "schema_version": "1.0",
+    "dataset_name": "Detailed Indian Crime Case Entity Graph Demo Dataset",
+    "data_type": "synthetic",
+    "record_count": 15,
+    "purpose": "Demonstrate document-extraction output and case-level entity relationship graph",
+    "important_notice": "All names, cases, events, identifiers, locations and relationships in this file are fictional and created only for software demonstration/testing. They are not real crime reports."
+  },
+  "entity_types": [
+    "CASE",
+    "PERSON",
+    "LOCATION",
+    "WEAPON",
+    "VEHICLE",
+    "OBJECT",
+    "EVENT",
+    "EVIDENCE"
+  ],
+  "cases": [
+    {
+      "case_id": "DETAIL-CASE-001",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Murder",
+        "status": "Under Investigation",
+        "severity": "Critical",
+        "reported_date": "2026-08-14",
+        "incident_date": "2026-08-13",
+        "incident_time": "22:35",
+        "police_station": "Vikhroli Police Station",
+        "investigating_unit": "Mumbai Crime Branch",
+        "summary": "Fictional homicide following a dispute between two acquaintances near a commercial lane."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-001",
+          "name": "Kannamwar Nagar, Vikhroli East",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "crime_scene"
+        },
+        {
+          "location_id": "LOC-002",
+          "name": "Vikhroli Railway Station",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "last_known_movement"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-001",
+          "name": "Arjun Prakash More",
+          "role": "victim",
+          "age": 31,
+          "gender": "Male",
+          "residence": "Kannamwar Nagar, Vikhroli East, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-002",
+          "name": "Nitin Rajendra Pawar",
+          "role": "suspect",
+          "age": 34,
+          "gender": "Male",
+          "residence": "Kannamwar Nagar, Vikhroli East, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-003",
+          "name": "Mehul Sanjay Shah",
+          "role": "witness",
+          "age": 29,
+          "gender": "Male",
+          "residence": "Kannamwar Nagar, Vikhroli East, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-004",
+          "name": "Rakesh Vinod Patil",
+          "role": "witness",
+          "age": 42,
+          "gender": "Male",
+          "residence": "Kannamwar Nagar, Vikhroli East, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-005",
+          "name": "Abhishek Sharma",
+          "aliases": [
+            "Abhi",
+            "Abhishek"
+          ],
+          "role": "witness",
+          "age": 26,
+          "gender": "Male",
+          "residence": "Flat 402, Greenview Residency, Kannamwar Nagar, Vikhroli East, Mumbai",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "occupation": "Software Engineer & Eyewitness Informant",
+          "contact": "+91-98201-44912",
+          "statement_summary": "Direct eyewitness to initial argument at 22:10; identified black motorcycle MH-03-KR-4821 during rapid departure towards Eastern Express Highway."
+        }
+      ],
+      "weapons": [
+        {
+          "weapon_id": "WPN-001",
+          "type": "knife",
+          "description": "Fictional single-edged kitchen knife recovered near a drainage channel",
+          "status": "seized"
+        }
+      ],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-001",
+          "registration": "MH-03-KR-4821",
+          "type": "motorcycle",
+          "owner_person_id": "PER-002",
+          "role": "suspected_escape_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-001",
+          "type": "mobile_phone",
+          "description": "Black smartphone recovered from victim"
+        },
+        {
+          "object_id": "OBJ-002",
+          "type": "blood_stained_clothing",
+          "description": "Dark blue shirt recovered during fictional evidence collection"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-001",
+          "type": "argument",
+          "timestamp": "2026-08-13T22:10:00",
+          "location_id": "LOC-001",
+          "person_ids": [
+            "PER-001",
+            "PER-002"
+          ]
+        },
+        {
+          "event_id": "EVT-002",
+          "type": "assault",
+          "timestamp": "2026-08-13T22:31:00",
+          "location_id": "LOC-001",
+          "person_ids": [
+            "PER-001",
+            "PER-002"
+          ],
+          "weapon_id": "WPN-001"
+        },
+        {
+          "event_id": "EVT-003",
+          "type": "body_discovered",
+          "timestamp": "2026-08-13T22:52:00",
+          "location_id": "LOC-001",
+          "person_ids": [
+            "PER-003"
+          ]
+        },
+        {
+          "event_id": "EVT-004",
+          "type": "vehicle_departure",
+          "timestamp": "2026-08-13T22:40:00",
+          "location_id": "LOC-001",
+          "person_ids": [
+            "PER-002"
+          ],
+          "vehicle_id": "VEH-001"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-001",
+          "type": "weapon",
+          "linked_entity": "WPN-001"
+        },
+        {
+          "evidence_id": "EVD-002",
+          "type": "mobile_phone",
+          "linked_entity": "OBJ-001"
+        },
+        {
+          "evidence_id": "EVD-003",
+          "type": "CCTV",
+          "description": "Fictional CCTV reference showing two people near the lane"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-002",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-002",
+          "relation": "associated_with",
+          "target": "VEH-001"
+        },
+        {
+          "source": "WPN-001",
+          "relation": "case_related_weapon",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-003",
+          "relation": "witness_to",
+          "target": "EVT-003"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-001"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-002"
+        },
+        {
+          "source": "PER-005",
+          "relation": "witness_statement_for",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-005",
+          "relation": "witnessed_event",
+          "target": "EVT-004"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-002",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Robbery",
+        "status": "Court Proceedings",
+        "severity": "High",
+        "reported_date": "2026-07-19",
+        "incident_date": "2026-07-19",
+        "incident_time": "20:15",
+        "police_station": "Andheri Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional armed robbery at a jewellery shop."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-003",
+          "name": "Andheri West",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-032",
+          "name": "Thane Railway Station",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-005",
+          "name": "Amit Patil",
+          "role": "victim",
+          "age": 31,
+          "gender": "Male",
+          "residence": "Andheri West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-006",
+          "name": "Rahul Shah",
+          "role": "suspect",
+          "age": 31,
+          "gender": "Male",
+          "residence": "Andheri West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-007",
+          "name": "Neha Mehta",
+          "role": "witness",
+          "age": 26,
+          "gender": "Female",
+          "residence": "Andheri West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-008",
+          "name": "Vikram Deshmukh",
+          "role": "associate_or_person_of_interest",
+          "age": 32,
+          "gender": "Male",
+          "residence": "Andheri West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [
+        {
+          "weapon_id": "WPN-003",
+          "type": "blunt_object",
+          "description": "Fictional blunt_object associated with the investigation",
+          "status": "seized"
+        }
+      ],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-003",
+          "registration": "MH-03-CF-2374",
+          "type": "sedan",
+          "owner_person_id": "PER-006",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-003",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-022",
+          "type": "personal_item",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-009",
+          "type": "initial_contact",
+          "timestamp": "2026-07-19T20:15:00",
+          "location_id": "LOC-003",
+          "person_ids": [
+            "PER-005",
+            "PER-006"
+          ]
+        },
+        {
+          "event_id": "EVT-010",
+          "type": "incident",
+          "timestamp": "2026-07-19T20:15:15",
+          "location_id": "LOC-003",
+          "person_ids": [
+            "PER-005",
+            "PER-006"
+          ],
+          "weapon_id": "WPN-003"
+        },
+        {
+          "event_id": "EVT-011",
+          "type": "witness_observation",
+          "timestamp": "2026-07-19T20:15:30",
+          "location_id": "LOC-003",
+          "person_ids": [
+            "PER-007"
+          ]
+        },
+        {
+          "event_id": "EVT-012",
+          "type": "follow_up_movement",
+          "timestamp": "2026-07-19T20:15:50",
+          "location_id": "LOC-032",
+          "person_ids": [
+            "PER-006"
+          ],
+          "vehicle_id": "VEH-003"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-003",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-032",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-006",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-007",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-008",
+          "relation": "potentially_associated_with",
+          "target": "PER-006"
+        },
+        {
+          "source": "PER-006",
+          "relation": "associated_with",
+          "target": "VEH-003"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-003"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-032"
+        },
+        {
+          "source": "OBJ-003",
+          "relation": "evidence_for",
+          "target": "CASE"
+        },
+        {
+          "source": "WPN-003",
+          "relation": "case_related_weapon",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-003",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Kidnapping",
+        "status": "Under Investigation",
+        "severity": "High",
+        "reported_date": "2026-06-11",
+        "incident_date": "2026-06-11",
+        "incident_time": "21:40",
+        "police_station": "Powai Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional kidnapping investigation involving a missing employee."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-004",
+          "name": "Powai",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-033",
+          "name": "CSMT",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-009",
+          "name": "Sanjay Kulkarni",
+          "role": "victim",
+          "age": 34,
+          "gender": "Female",
+          "residence": "Powai, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-010",
+          "name": "Rohan Joshi",
+          "role": "suspect",
+          "age": 33,
+          "gender": "Male",
+          "residence": "Powai, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-011",
+          "name": "Priya Pawar",
+          "role": "witness",
+          "age": 27,
+          "gender": "Female",
+          "residence": "Powai, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-012",
+          "name": "Sameer Naik",
+          "role": "associate_or_person_of_interest",
+          "age": 33,
+          "gender": "Male",
+          "residence": "Powai, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [
+        {
+          "weapon_id": "WPN-004",
+          "type": "pistol",
+          "description": "Fictional pistol associated with the investigation",
+          "status": "seized"
+        }
+      ],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-004",
+          "registration": "MH-04-DH-2511",
+          "type": "van",
+          "owner_person_id": "PER-010",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-004",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-023",
+          "type": "personal_item",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-013",
+          "type": "initial_contact",
+          "timestamp": "2026-06-11T21:40:00",
+          "location_id": "LOC-004",
+          "person_ids": [
+            "PER-009",
+            "PER-010"
+          ]
+        },
+        {
+          "event_id": "EVT-014",
+          "type": "incident",
+          "timestamp": "2026-06-11T21:40:15",
+          "location_id": "LOC-004",
+          "person_ids": [
+            "PER-009",
+            "PER-010"
+          ],
+          "weapon_id": "WPN-004"
+        },
+        {
+          "event_id": "EVT-015",
+          "type": "witness_observation",
+          "timestamp": "2026-06-11T21:40:30",
+          "location_id": "LOC-004",
+          "person_ids": [
+            "PER-011"
+          ]
+        },
+        {
+          "event_id": "EVT-016",
+          "type": "follow_up_movement",
+          "timestamp": "2026-06-11T21:40:50",
+          "location_id": "LOC-033",
+          "person_ids": [
+            "PER-010"
+          ],
+          "vehicle_id": "VEH-004"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-004",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-033",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-010",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-011",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-012",
+          "relation": "potentially_associated_with",
+          "target": "PER-010"
+        },
+        {
+          "source": "PER-010",
+          "relation": "associated_with",
+          "target": "VEH-004"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-004"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-033"
+        },
+        {
+          "source": "OBJ-004",
+          "relation": "evidence_for",
+          "target": "CASE"
+        },
+        {
+          "source": "WPN-004",
+          "relation": "case_related_weapon",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-004",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Vehicle Theft",
+        "status": "Investigation Complete",
+        "severity": "Medium",
+        "reported_date": "2026-05-23",
+        "incident_date": "2026-05-23",
+        "incident_time": "02:20",
+        "police_station": "Bandra Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional motorcycle theft outside a residential building."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-005",
+          "name": "Bandra West",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-034",
+          "name": "Vashi Railway Station",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-013",
+          "name": "Aditya More",
+          "role": "victim",
+          "age": 37,
+          "gender": "Male",
+          "residence": "Bandra West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-014",
+          "name": "Nikhil Bhosale",
+          "role": "suspect",
+          "age": 35,
+          "gender": "Male",
+          "residence": "Bandra West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-015",
+          "name": "Kavya Sawant",
+          "role": "witness",
+          "age": 28,
+          "gender": "Female",
+          "residence": "Bandra West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-016",
+          "name": "Manish Jadhav",
+          "role": "associate_or_person_of_interest",
+          "age": 34,
+          "gender": "Male",
+          "residence": "Bandra West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-005",
+          "registration": "MH-05-EJ-2648",
+          "type": "motorcycle",
+          "owner_person_id": "PER-014",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-005",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-024",
+          "type": "personal_item",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-017",
+          "type": "initial_contact",
+          "timestamp": "2026-05-23T02:20:00",
+          "location_id": "LOC-005",
+          "person_ids": [
+            "PER-013",
+            "PER-014"
+          ]
+        },
+        {
+          "event_id": "EVT-018",
+          "type": "incident",
+          "timestamp": "2026-05-23T02:20:15",
+          "location_id": "LOC-005",
+          "person_ids": [
+            "PER-013",
+            "PER-014"
+          ],
+          "weapon_id": null
+        },
+        {
+          "event_id": "EVT-019",
+          "type": "witness_observation",
+          "timestamp": "2026-05-23T02:20:30",
+          "location_id": "LOC-005",
+          "person_ids": [
+            "PER-015"
+          ]
+        },
+        {
+          "event_id": "EVT-020",
+          "type": "follow_up_movement",
+          "timestamp": "2026-05-23T02:20:50",
+          "location_id": "LOC-034",
+          "person_ids": [
+            "PER-014"
+          ],
+          "vehicle_id": "VEH-005"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-005",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-034",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-014",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-015",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-016",
+          "relation": "potentially_associated_with",
+          "target": "PER-014"
+        },
+        {
+          "source": "PER-014",
+          "relation": "associated_with",
+          "target": "VEH-005"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-005"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-034"
+        },
+        {
+          "source": "OBJ-005",
+          "relation": "evidence_for",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-005",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Burglary",
+        "status": "Court Proceedings",
+        "severity": "High",
+        "reported_date": "2026-04-17",
+        "incident_date": "2026-04-17",
+        "incident_time": "03:10",
+        "police_station": "Thane Nagar Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional residential burglary involving electronics and cash."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-006",
+          "name": "Thane West",
+          "city": "Thane West",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-035",
+          "name": "Mumbai Central Railway Station",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-017",
+          "name": "Pranav Rane",
+          "role": "victim",
+          "age": 40,
+          "gender": "Male",
+          "residence": "Thane West, Thane West, Maharashtra",
+          "city": "Thane West",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-018",
+          "name": "Yash Chavan",
+          "role": "suspect",
+          "age": 37,
+          "gender": "Male",
+          "residence": "Thane West, Thane West, Maharashtra",
+          "city": "Thane West",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-019",
+          "name": "Isha Shetty",
+          "role": "witness",
+          "age": 29,
+          "gender": "Female",
+          "residence": "Thane West, Thane West, Maharashtra",
+          "city": "Thane West",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-020",
+          "name": "Vivek Patil",
+          "role": "associate_or_person_of_interest",
+          "age": 35,
+          "gender": "Male",
+          "residence": "Thane West, Thane West, Maharashtra",
+          "city": "Thane West",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [
+        {
+          "weapon_id": "WPN-006",
+          "type": "iron_rod",
+          "description": "Fictional iron_rod associated with the investigation",
+          "status": "seized"
+        }
+      ],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-006",
+          "registration": "MH-01-FL-2785",
+          "type": "hatchback",
+          "owner_person_id": "PER-018",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-006",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-025",
+          "type": "personal_item",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-021",
+          "type": "initial_contact",
+          "timestamp": "2026-04-17T03:10:00",
+          "location_id": "LOC-006",
+          "person_ids": [
+            "PER-017",
+            "PER-018"
+          ]
+        },
+        {
+          "event_id": "EVT-022",
+          "type": "incident",
+          "timestamp": "2026-04-17T03:10:15",
+          "location_id": "LOC-006",
+          "person_ids": [
+            "PER-017",
+            "PER-018"
+          ],
+          "weapon_id": "WPN-006"
+        },
+        {
+          "event_id": "EVT-023",
+          "type": "witness_observation",
+          "timestamp": "2026-04-17T03:10:30",
+          "location_id": "LOC-006",
+          "person_ids": [
+            "PER-019"
+          ]
+        },
+        {
+          "event_id": "EVT-024",
+          "type": "follow_up_movement",
+          "timestamp": "2026-04-17T03:10:50",
+          "location_id": "LOC-035",
+          "person_ids": [
+            "PER-018"
+          ],
+          "vehicle_id": "VEH-006"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-006",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-035",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-018",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-019",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-020",
+          "relation": "potentially_associated_with",
+          "target": "PER-018"
+        },
+        {
+          "source": "PER-018",
+          "relation": "associated_with",
+          "target": "VEH-006"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-006"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-035"
+        },
+        {
+          "source": "OBJ-006",
+          "relation": "evidence_for",
+          "target": "CASE"
+        },
+        {
+          "source": "WPN-006",
+          "relation": "case_related_weapon",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-006",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Fraud",
+        "status": "Under Investigation",
+        "severity": "Medium",
+        "reported_date": "2026-03-29",
+        "incident_date": "2026-03-29",
+        "incident_time": "11:30",
+        "police_station": "BKC Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional corporate payment fraud involving a manipulated invoice."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-007",
+          "name": "BKC",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-036",
+          "name": "Bandra Railway Station",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-021",
+          "name": "Akash Mehta",
+          "role": "victim",
+          "age": 43,
+          "gender": "Female",
+          "residence": "BKC, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-022",
+          "name": "Karan Deshmukh",
+          "role": "suspect",
+          "age": 39,
+          "gender": "Male",
+          "residence": "BKC, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-023",
+          "name": "Riya Shah",
+          "role": "witness",
+          "age": 30,
+          "gender": "Female",
+          "residence": "BKC, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-024",
+          "name": "Siddharth Joshi",
+          "role": "associate_or_person_of_interest",
+          "age": 36,
+          "gender": "Male",
+          "residence": "BKC, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-007",
+          "registration": "MH-02-GN-2922",
+          "type": "sedan",
+          "owner_person_id": "PER-022",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-007",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-026",
+          "type": "document",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-025",
+          "type": "initial_contact",
+          "timestamp": "2026-03-29T11:30:00",
+          "location_id": "LOC-007",
+          "person_ids": [
+            "PER-021",
+            "PER-022"
+          ]
+        },
+        {
+          "event_id": "EVT-026",
+          "type": "incident",
+          "timestamp": "2026-03-29T11:30:15",
+          "location_id": "LOC-007",
+          "person_ids": [
+            "PER-021",
+            "PER-022"
+          ],
+          "weapon_id": null
+        },
+        {
+          "event_id": "EVT-027",
+          "type": "witness_observation",
+          "timestamp": "2026-03-29T11:30:30",
+          "location_id": "LOC-007",
+          "person_ids": [
+            "PER-023"
+          ]
+        },
+        {
+          "event_id": "EVT-028",
+          "type": "follow_up_movement",
+          "timestamp": "2026-03-29T11:30:50",
+          "location_id": "LOC-036",
+          "person_ids": [
+            "PER-022"
+          ],
+          "vehicle_id": "VEH-007"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-007",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-036",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-022",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-023",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-024",
+          "relation": "potentially_associated_with",
+          "target": "PER-022"
+        },
+        {
+          "source": "PER-022",
+          "relation": "associated_with",
+          "target": "VEH-007"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-007"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-036"
+        },
+        {
+          "source": "OBJ-007",
+          "relation": "evidence_for",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-007",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Murder",
+        "status": "Investigation Complete",
+        "severity": "Critical",
+        "reported_date": "2026-02-08",
+        "incident_date": "2026-02-08",
+        "incident_time": "23:15",
+        "police_station": "Dadar Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional homicide following a dispute between business associates."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-008",
+          "name": "Dadar West",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-037",
+          "name": "Thane Railway Station",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-025",
+          "name": "Vivek Pawar",
+          "role": "victim",
+          "age": 46,
+          "gender": "Male",
+          "residence": "Dadar West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-026",
+          "name": "Manish Naik",
+          "role": "suspect",
+          "age": 41,
+          "gender": "Male",
+          "residence": "Dadar West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-027",
+          "name": "Ananya Kulkarni",
+          "role": "witness",
+          "age": 31,
+          "gender": "Female",
+          "residence": "Dadar West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-028",
+          "name": "Rohit More",
+          "role": "associate_or_person_of_interest",
+          "age": 37,
+          "gender": "Male",
+          "residence": "Dadar West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [
+        {
+          "weapon_id": "WPN-008",
+          "type": "pistol",
+          "description": "Fictional pistol associated with the investigation",
+          "status": "seized"
+        }
+      ],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-008",
+          "registration": "MH-03-HP-3059",
+          "type": "van",
+          "owner_person_id": "PER-026",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-008",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-027",
+          "type": "personal_item",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-029",
+          "type": "initial_contact",
+          "timestamp": "2026-02-08T23:15:00",
+          "location_id": "LOC-008",
+          "person_ids": [
+            "PER-025",
+            "PER-026"
+          ]
+        },
+        {
+          "event_id": "EVT-030",
+          "type": "incident",
+          "timestamp": "2026-02-08T23:15:15",
+          "location_id": "LOC-008",
+          "person_ids": [
+            "PER-025",
+            "PER-026"
+          ],
+          "weapon_id": "WPN-008"
+        },
+        {
+          "event_id": "EVT-031",
+          "type": "witness_observation",
+          "timestamp": "2026-02-08T23:15:30",
+          "location_id": "LOC-008",
+          "person_ids": [
+            "PER-027"
+          ]
+        },
+        {
+          "event_id": "EVT-032",
+          "type": "follow_up_movement",
+          "timestamp": "2026-02-08T23:15:50",
+          "location_id": "LOC-037",
+          "person_ids": [
+            "PER-026"
+          ],
+          "vehicle_id": "VEH-008"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-008",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-037",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-026",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-027",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-028",
+          "relation": "potentially_associated_with",
+          "target": "PER-026"
+        },
+        {
+          "source": "PER-026",
+          "relation": "associated_with",
+          "target": "VEH-008"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-008"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-037"
+        },
+        {
+          "source": "OBJ-008",
+          "relation": "evidence_for",
+          "target": "CASE"
+        },
+        {
+          "source": "WPN-008",
+          "relation": "case_related_weapon",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-008",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Missing Person",
+        "status": "Court Proceedings",
+        "severity": "High",
+        "reported_date": "2026-01-21",
+        "incident_date": "2026-01-21",
+        "incident_time": "19:05",
+        "police_station": "Kalyan Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional missing-person investigation with a railway-station sighting."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-009",
+          "name": "Kalyan West",
+          "city": "Kalyan West",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-038",
+          "name": "CSMT",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-029",
+          "name": "Siddharth Patil",
+          "role": "victim",
+          "age": 49,
+          "gender": "Male",
+          "residence": "Kalyan West, Kalyan West, Maharashtra",
+          "city": "Kalyan West",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-030",
+          "name": "Kunal Shah",
+          "role": "suspect",
+          "age": 43,
+          "gender": "Male",
+          "residence": "Kalyan West, Kalyan West, Maharashtra",
+          "city": "Kalyan West",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-031",
+          "name": "Sneha Rane",
+          "role": "witness",
+          "age": 32,
+          "gender": "Female",
+          "residence": "Kalyan West, Kalyan West, Maharashtra",
+          "city": "Kalyan West",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-032",
+          "name": "Aakash Jadhav",
+          "role": "associate_or_person_of_interest",
+          "age": 38,
+          "gender": "Male",
+          "residence": "Kalyan West, Kalyan West, Maharashtra",
+          "city": "Kalyan West",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-009",
+          "registration": "MH-04-IR-3196",
+          "type": "motorcycle",
+          "owner_person_id": "PER-030",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-009",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-028",
+          "type": "personal_item",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-033",
+          "type": "initial_contact",
+          "timestamp": "2026-01-21T19:05:00",
+          "location_id": "LOC-009",
+          "person_ids": [
+            "PER-029",
+            "PER-030"
+          ]
+        },
+        {
+          "event_id": "EVT-034",
+          "type": "incident",
+          "timestamp": "2026-01-21T19:05:15",
+          "location_id": "LOC-009",
+          "person_ids": [
+            "PER-029",
+            "PER-030"
+          ],
+          "weapon_id": null
+        },
+        {
+          "event_id": "EVT-035",
+          "type": "witness_observation",
+          "timestamp": "2026-01-21T19:05:30",
+          "location_id": "LOC-009",
+          "person_ids": [
+            "PER-031"
+          ]
+        },
+        {
+          "event_id": "EVT-036",
+          "type": "follow_up_movement",
+          "timestamp": "2026-01-21T19:05:50",
+          "location_id": "LOC-038",
+          "person_ids": [
+            "PER-030"
+          ],
+          "vehicle_id": "VEH-009"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-009",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-038",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-030",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-031",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-032",
+          "relation": "potentially_associated_with",
+          "target": "PER-030"
+        },
+        {
+          "source": "PER-030",
+          "relation": "associated_with",
+          "target": "VEH-009"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-009"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-038"
+        },
+        {
+          "source": "OBJ-009",
+          "relation": "evidence_for",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-009",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Assault",
+        "status": "Under Investigation",
+        "severity": "Medium",
+        "reported_date": "2026-08-02",
+        "incident_date": "2026-08-02",
+        "incident_time": "18:35",
+        "police_station": "Pant Nagar Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional assault outside a commercial establishment."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-010",
+          "name": "Ghatkopar East",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-039",
+          "name": "Vashi Railway Station",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-033",
+          "name": "Rahul More",
+          "role": "victim",
+          "age": 52,
+          "gender": "Female",
+          "residence": "Ghatkopar East, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-034",
+          "name": "Tejas Patil",
+          "role": "suspect",
+          "age": 45,
+          "gender": "Male",
+          "residence": "Ghatkopar East, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-035",
+          "name": "Mrunal Shah",
+          "role": "witness",
+          "age": 33,
+          "gender": "Female",
+          "residence": "Ghatkopar East, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-036",
+          "name": "Sahil Pawar",
+          "role": "associate_or_person_of_interest",
+          "age": 39,
+          "gender": "Male",
+          "residence": "Ghatkopar East, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [
+        {
+          "weapon_id": "WPN-010",
+          "type": "iron_rod",
+          "description": "Fictional iron_rod associated with the investigation",
+          "status": "seized"
+        }
+      ],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-010",
+          "registration": "MH-05-JT-3333",
+          "type": "hatchback",
+          "owner_person_id": "PER-034",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-010",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-029",
+          "type": "personal_item",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-037",
+          "type": "initial_contact",
+          "timestamp": "2026-08-02T18:35:00",
+          "location_id": "LOC-010",
+          "person_ids": [
+            "PER-033",
+            "PER-034"
+          ]
+        },
+        {
+          "event_id": "EVT-038",
+          "type": "incident",
+          "timestamp": "2026-08-02T18:35:15",
+          "location_id": "LOC-010",
+          "person_ids": [
+            "PER-033",
+            "PER-034"
+          ],
+          "weapon_id": "WPN-010"
+        },
+        {
+          "event_id": "EVT-039",
+          "type": "witness_observation",
+          "timestamp": "2026-08-02T18:35:30",
+          "location_id": "LOC-010",
+          "person_ids": [
+            "PER-035"
+          ]
+        },
+        {
+          "event_id": "EVT-040",
+          "type": "follow_up_movement",
+          "timestamp": "2026-08-02T18:35:50",
+          "location_id": "LOC-039",
+          "person_ids": [
+            "PER-034"
+          ],
+          "vehicle_id": "VEH-010"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-010",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-039",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-034",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-035",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-036",
+          "relation": "potentially_associated_with",
+          "target": "PER-034"
+        },
+        {
+          "source": "PER-034",
+          "relation": "associated_with",
+          "target": "VEH-010"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-010"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-039"
+        },
+        {
+          "source": "OBJ-010",
+          "relation": "evidence_for",
+          "target": "CASE"
+        },
+        {
+          "source": "WPN-010",
+          "relation": "case_related_weapon",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-010",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Cyber Fraud",
+        "status": "Investigation Complete",
+        "severity": "High",
+        "reported_date": "2026-07-04",
+        "incident_date": "2026-07-04",
+        "incident_time": "14:20",
+        "police_station": "Vashi Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional phishing-based financial fraud."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-011",
+          "name": "Vashi",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-040",
+          "name": "Mumbai Central Railway Station",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-037",
+          "name": "Rohan Mehta",
+          "role": "victim",
+          "age": 55,
+          "gender": "Male",
+          "residence": "Vashi, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-038",
+          "name": "Varun Joshi",
+          "role": "suspect",
+          "age": 47,
+          "gender": "Male",
+          "residence": "Vashi, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-039",
+          "name": "Pooja Nair",
+          "role": "witness",
+          "age": 34,
+          "gender": "Female",
+          "residence": "Vashi, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-040",
+          "name": "Dev Kulkarni",
+          "role": "associate_or_person_of_interest",
+          "age": 40,
+          "gender": "Male",
+          "residence": "Vashi, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-011",
+          "registration": "MH-01-KV-3470",
+          "type": "sedan",
+          "owner_person_id": "PER-038",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-011",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-030",
+          "type": "document",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-041",
+          "type": "initial_contact",
+          "timestamp": "2026-07-04T14:20:00",
+          "location_id": "LOC-011",
+          "person_ids": [
+            "PER-037",
+            "PER-038"
+          ]
+        },
+        {
+          "event_id": "EVT-042",
+          "type": "incident",
+          "timestamp": "2026-07-04T14:20:15",
+          "location_id": "LOC-011",
+          "person_ids": [
+            "PER-037",
+            "PER-038"
+          ],
+          "weapon_id": null
+        },
+        {
+          "event_id": "EVT-043",
+          "type": "witness_observation",
+          "timestamp": "2026-07-04T14:20:30",
+          "location_id": "LOC-011",
+          "person_ids": [
+            "PER-039"
+          ]
+        },
+        {
+          "event_id": "EVT-044",
+          "type": "follow_up_movement",
+          "timestamp": "2026-07-04T14:20:50",
+          "location_id": "LOC-040",
+          "person_ids": [
+            "PER-038"
+          ],
+          "vehicle_id": "VEH-011"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-011",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-040",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-038",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-039",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-040",
+          "relation": "potentially_associated_with",
+          "target": "PER-038"
+        },
+        {
+          "source": "PER-038",
+          "relation": "associated_with",
+          "target": "VEH-011"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-011"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-040"
+        },
+        {
+          "source": "OBJ-011",
+          "relation": "evidence_for",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-011",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Extortion",
+        "status": "Court Proceedings",
+        "severity": "High",
+        "reported_date": "2026-06-27",
+        "incident_date": "2026-06-27",
+        "incident_time": "22:10",
+        "police_station": "NM Joshi Marg Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional extortion investigation involving threats to a restaurant owner."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-012",
+          "name": "Lower Parel",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-041",
+          "name": "Bandra Railway Station",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-041",
+          "name": "Karan Patil",
+          "role": "victim",
+          "age": 58,
+          "gender": "Male",
+          "residence": "Lower Parel, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-042",
+          "name": "Mihir Shah",
+          "role": "suspect",
+          "age": 49,
+          "gender": "Male",
+          "residence": "Lower Parel, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-043",
+          "name": "Rhea Deshmukh",
+          "role": "witness",
+          "age": 35,
+          "gender": "Female",
+          "residence": "Lower Parel, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-044",
+          "name": "Nilesh More",
+          "role": "associate_or_person_of_interest",
+          "age": 41,
+          "gender": "Male",
+          "residence": "Lower Parel, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [
+        {
+          "weapon_id": "WPN-012",
+          "type": "pistol",
+          "description": "Fictional pistol associated with the investigation",
+          "status": "seized"
+        }
+      ],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-012",
+          "registration": "MH-02-LX-3607",
+          "type": "van",
+          "owner_person_id": "PER-042",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-012",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-031",
+          "type": "personal_item",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-045",
+          "type": "initial_contact",
+          "timestamp": "2026-06-27T22:10:00",
+          "location_id": "LOC-012",
+          "person_ids": [
+            "PER-041",
+            "PER-042"
+          ]
+        },
+        {
+          "event_id": "EVT-046",
+          "type": "incident",
+          "timestamp": "2026-06-27T22:10:15",
+          "location_id": "LOC-012",
+          "person_ids": [
+            "PER-041",
+            "PER-042"
+          ],
+          "weapon_id": "WPN-012"
+        },
+        {
+          "event_id": "EVT-047",
+          "type": "witness_observation",
+          "timestamp": "2026-06-27T22:10:30",
+          "location_id": "LOC-012",
+          "person_ids": [
+            "PER-043"
+          ]
+        },
+        {
+          "event_id": "EVT-048",
+          "type": "follow_up_movement",
+          "timestamp": "2026-06-27T22:10:50",
+          "location_id": "LOC-041",
+          "person_ids": [
+            "PER-042"
+          ],
+          "vehicle_id": "VEH-012"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-012",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-041",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-042",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-043",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-044",
+          "relation": "potentially_associated_with",
+          "target": "PER-042"
+        },
+        {
+          "source": "PER-042",
+          "relation": "associated_with",
+          "target": "VEH-012"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-012"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-041"
+        },
+        {
+          "source": "OBJ-012",
+          "relation": "evidence_for",
+          "target": "CASE"
+        },
+        {
+          "source": "WPN-012",
+          "relation": "case_related_weapon",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-012",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Robbery",
+        "status": "Under Investigation",
+        "severity": "High",
+        "reported_date": "2026-05-13",
+        "incident_date": "2026-05-13",
+        "incident_time": "20:45",
+        "police_station": "Kurla Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional street robbery involving two coordinated suspects."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-013",
+          "name": "Kurla West",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-042",
+          "name": "Thane Railway Station",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-045",
+          "name": "Yash Pawar",
+          "role": "victim",
+          "age": 26,
+          "gender": "Female",
+          "residence": "Kurla West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-046",
+          "name": "Omkar Naik",
+          "role": "suspect",
+          "age": 51,
+          "gender": "Male",
+          "residence": "Kurla West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-047",
+          "name": "Sakshi Patil",
+          "role": "witness",
+          "age": 36,
+          "gender": "Female",
+          "residence": "Kurla West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-048",
+          "name": "Raj Jadhav",
+          "role": "associate_or_person_of_interest",
+          "age": 42,
+          "gender": "Male",
+          "residence": "Kurla West, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [
+        {
+          "weapon_id": "WPN-013",
+          "type": "knife",
+          "description": "Fictional knife associated with the investigation",
+          "status": "seized"
+        }
+      ],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-013",
+          "registration": "MH-03-MB-3744",
+          "type": "motorcycle",
+          "owner_person_id": "PER-046",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-013",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-032",
+          "type": "personal_item",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-049",
+          "type": "initial_contact",
+          "timestamp": "2026-05-13T20:45:00",
+          "location_id": "LOC-013",
+          "person_ids": [
+            "PER-045",
+            "PER-046"
+          ]
+        },
+        {
+          "event_id": "EVT-050",
+          "type": "incident",
+          "timestamp": "2026-05-13T20:45:15",
+          "location_id": "LOC-013",
+          "person_ids": [
+            "PER-045",
+            "PER-046"
+          ],
+          "weapon_id": "WPN-013"
+        },
+        {
+          "event_id": "EVT-051",
+          "type": "witness_observation",
+          "timestamp": "2026-05-13T20:45:30",
+          "location_id": "LOC-013",
+          "person_ids": [
+            "PER-047"
+          ]
+        },
+        {
+          "event_id": "EVT-052",
+          "type": "follow_up_movement",
+          "timestamp": "2026-05-13T20:45:50",
+          "location_id": "LOC-042",
+          "person_ids": [
+            "PER-046"
+          ],
+          "vehicle_id": "VEH-013"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-013",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-042",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-046",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-047",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-048",
+          "relation": "potentially_associated_with",
+          "target": "PER-046"
+        },
+        {
+          "source": "PER-046",
+          "relation": "associated_with",
+          "target": "VEH-013"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-013"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-042"
+        },
+        {
+          "source": "OBJ-013",
+          "relation": "evidence_for",
+          "target": "CASE"
+        },
+        {
+          "source": "WPN-013",
+          "relation": "case_related_weapon",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-013",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Drug Possession",
+        "status": "Investigation Complete",
+        "severity": "High",
+        "reported_date": "2026-04-05",
+        "incident_date": "2026-04-05",
+        "incident_time": "01:25",
+        "police_station": "CBD Belapur Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional controlled-substance possession investigation."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-014",
+          "name": "CBD Belapur",
+          "city": "CBD Belapur",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-043",
+          "name": "CSMT",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-049",
+          "name": "Aman Shah",
+          "role": "victim",
+          "age": 29,
+          "gender": "Male",
+          "residence": "CBD Belapur, CBD Belapur, Maharashtra",
+          "city": "CBD Belapur",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-050",
+          "name": "Dhruv More",
+          "role": "suspect",
+          "age": 53,
+          "gender": "Male",
+          "residence": "CBD Belapur, CBD Belapur, Maharashtra",
+          "city": "CBD Belapur",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-051",
+          "name": "Kavya Patil",
+          "role": "witness",
+          "age": 37,
+          "gender": "Female",
+          "residence": "CBD Belapur, CBD Belapur, Maharashtra",
+          "city": "CBD Belapur",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-052",
+          "name": "Nitin Joshi",
+          "role": "associate_or_person_of_interest",
+          "age": 43,
+          "gender": "Male",
+          "residence": "CBD Belapur, CBD Belapur, Maharashtra",
+          "city": "CBD Belapur",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [
+        {
+          "weapon_id": "WPN-014",
+          "type": "iron_rod",
+          "description": "Fictional iron_rod associated with the investigation",
+          "status": "seized"
+        }
+      ],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-014",
+          "registration": "MH-04-ND-3881",
+          "type": "hatchback",
+          "owner_person_id": "PER-050",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-014",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-033",
+          "type": "personal_item",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-053",
+          "type": "initial_contact",
+          "timestamp": "2026-04-05T01:25:00",
+          "location_id": "LOC-014",
+          "person_ids": [
+            "PER-049",
+            "PER-050"
+          ]
+        },
+        {
+          "event_id": "EVT-054",
+          "type": "incident",
+          "timestamp": "2026-04-05T01:25:15",
+          "location_id": "LOC-014",
+          "person_ids": [
+            "PER-049",
+            "PER-050"
+          ],
+          "weapon_id": "WPN-014"
+        },
+        {
+          "event_id": "EVT-055",
+          "type": "witness_observation",
+          "timestamp": "2026-04-05T01:25:30",
+          "location_id": "LOC-014",
+          "person_ids": [
+            "PER-051"
+          ]
+        },
+        {
+          "event_id": "EVT-056",
+          "type": "follow_up_movement",
+          "timestamp": "2026-04-05T01:25:50",
+          "location_id": "LOC-043",
+          "person_ids": [
+            "PER-050"
+          ],
+          "vehicle_id": "VEH-014"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-014",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-043",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-050",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-051",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-052",
+          "relation": "potentially_associated_with",
+          "target": "PER-050"
+        },
+        {
+          "source": "PER-050",
+          "relation": "associated_with",
+          "target": "VEH-014"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-014"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-043"
+        },
+        {
+          "source": "OBJ-014",
+          "relation": "evidence_for",
+          "target": "CASE"
+        },
+        {
+          "source": "WPN-014",
+          "relation": "case_related_weapon",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-014",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Arson",
+        "status": "Court Proceedings",
+        "severity": "Critical",
+        "reported_date": "2026-03-14",
+        "incident_date": "2026-03-14",
+        "incident_time": "00:55",
+        "police_station": "Mira Road Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional deliberate-fire investigation at a warehouse."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-015",
+          "name": "Mira Road",
+          "city": "Mira Road",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-044",
+          "name": "Vashi Railway Station",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-053",
+          "name": "Harsh Deshmukh",
+          "role": "victim",
+          "age": 32,
+          "gender": "Male",
+          "residence": "Mira Road, Mira Road, Maharashtra",
+          "city": "Mira Road",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-054",
+          "name": "Pratik Shah",
+          "role": "suspect",
+          "age": 27,
+          "gender": "Male",
+          "residence": "Mira Road, Mira Road, Maharashtra",
+          "city": "Mira Road",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-055",
+          "name": "Maya Kulkarni",
+          "role": "witness",
+          "age": 38,
+          "gender": "Female",
+          "residence": "Mira Road, Mira Road, Maharashtra",
+          "city": "Mira Road",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-056",
+          "name": "Ravi Pawar",
+          "role": "associate_or_person_of_interest",
+          "age": 44,
+          "gender": "Male",
+          "residence": "Mira Road, Mira Road, Maharashtra",
+          "city": "Mira Road",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [
+        {
+          "weapon_id": "WPN-015",
+          "type": "blunt_object",
+          "description": "Fictional blunt_object associated with the investigation",
+          "status": "seized"
+        }
+      ],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-015",
+          "registration": "MH-05-OF-4018",
+          "type": "sedan",
+          "owner_person_id": "PER-054",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-015",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-034",
+          "type": "personal_item",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-057",
+          "type": "initial_contact",
+          "timestamp": "2026-03-14T00:55:00",
+          "location_id": "LOC-015",
+          "person_ids": [
+            "PER-053",
+            "PER-054"
+          ]
+        },
+        {
+          "event_id": "EVT-058",
+          "type": "incident",
+          "timestamp": "2026-03-14T00:55:15",
+          "location_id": "LOC-015",
+          "person_ids": [
+            "PER-053",
+            "PER-054"
+          ],
+          "weapon_id": "WPN-015"
+        },
+        {
+          "event_id": "EVT-059",
+          "type": "witness_observation",
+          "timestamp": "2026-03-14T00:55:30",
+          "location_id": "LOC-015",
+          "person_ids": [
+            "PER-055"
+          ]
+        },
+        {
+          "event_id": "EVT-060",
+          "type": "follow_up_movement",
+          "timestamp": "2026-03-14T00:55:50",
+          "location_id": "LOC-044",
+          "person_ids": [
+            "PER-054"
+          ],
+          "vehicle_id": "VEH-015"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-015",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-044",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-054",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-055",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-056",
+          "relation": "potentially_associated_with",
+          "target": "PER-054"
+        },
+        {
+          "source": "PER-054",
+          "relation": "associated_with",
+          "target": "VEH-015"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-015"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-044"
+        },
+        {
+          "source": "OBJ-015",
+          "relation": "evidence_for",
+          "target": "CASE"
+        },
+        {
+          "source": "WPN-015",
+          "relation": "case_related_weapon",
+          "target": "CASE"
+        }
+      ]
+    },
+    {
+      "case_id": "DETAIL-CASE-015",
+      "source": {
+        "data_type": "synthetic_demo_data",
+        "purpose": "case_level_entity_graph"
+      },
+      "case": {
+        "crime_type": "Document Fraud",
+        "status": "Under Investigation",
+        "severity": "Medium",
+        "reported_date": "2026-02-25",
+        "incident_date": "2026-02-25",
+        "incident_time": "10:10",
+        "police_station": "Marine Drive Police Station",
+        "investigating_unit": "Maharashtra Police / Fictional Case Unit",
+        "summary": "Fictional forged-document investigation involving a property transaction."
+      },
+      "locations": [
+        {
+          "location_id": "LOC-016",
+          "name": "Churchgate",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "primary_case_location"
+        },
+        {
+          "location_id": "LOC-045",
+          "name": "Mumbai Central Railway Station",
+          "city": "Mumbai",
+          "state": "Maharashtra",
+          "role": "related_location"
+        }
+      ],
+      "persons": [
+        {
+          "person_id": "PER-057",
+          "name": "Ishan Patil",
+          "role": "victim",
+          "age": 35,
+          "gender": "Female",
+          "residence": "Churchgate, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-058",
+          "name": "Tanmay Mehta",
+          "role": "suspect",
+          "age": 29,
+          "gender": "Male",
+          "residence": "Churchgate, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-059",
+          "name": "Aarohi Shah",
+          "role": "witness",
+          "age": 39,
+          "gender": "Female",
+          "residence": "Churchgate, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        },
+        {
+          "person_id": "PER-060",
+          "name": "Suresh Rane",
+          "role": "associate_or_person_of_interest",
+          "age": 45,
+          "gender": "Male",
+          "residence": "Churchgate, Mumbai, Maharashtra",
+          "city": "Mumbai",
+          "state": "Maharashtra"
+        }
+      ],
+      "weapons": [],
+      "vehicles": [
+        {
+          "vehicle_id": "VEH-016",
+          "registration": "MH-01-PH-4155",
+          "type": "van",
+          "owner_person_id": "PER-058",
+          "role": "associated_vehicle"
+        }
+      ],
+      "objects": [
+        {
+          "object_id": "OBJ-016",
+          "type": "mobile_phone",
+          "description": "Fictional smartphone relevant to the investigation"
+        },
+        {
+          "object_id": "OBJ-035",
+          "type": "document",
+          "description": "Fictional case-related object"
+        }
+      ],
+      "events": [
+        {
+          "event_id": "EVT-061",
+          "type": "initial_contact",
+          "timestamp": "2026-02-25T10:10:00",
+          "location_id": "LOC-016",
+          "person_ids": [
+            "PER-057",
+            "PER-058"
+          ]
+        },
+        {
+          "event_id": "EVT-062",
+          "type": "incident",
+          "timestamp": "2026-02-25T10:10:15",
+          "location_id": "LOC-016",
+          "person_ids": [
+            "PER-057",
+            "PER-058"
+          ],
+          "weapon_id": null
+        },
+        {
+          "event_id": "EVT-063",
+          "type": "witness_observation",
+          "timestamp": "2026-02-25T10:10:30",
+          "location_id": "LOC-016",
+          "person_ids": [
+            "PER-059"
+          ]
+        },
+        {
+          "event_id": "EVT-064",
+          "type": "follow_up_movement",
+          "timestamp": "2026-02-25T10:10:50",
+          "location_id": "LOC-045",
+          "person_ids": [
+            "PER-058"
+          ],
+          "vehicle_id": "VEH-016"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-016",
+          "type": "CCTV",
+          "description": "Fictional CCTV evidence reference"
+        },
+        {
+          "evidence_id": "EVD-045",
+          "type": "forensic_item",
+          "description": "Fictional forensic evidence reference"
+        }
+      ],
+      "relationships": [
+        {
+          "source": "PER-058",
+          "relation": "suspected_involvement",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-059",
+          "relation": "witness_to",
+          "target": "CASE"
+        },
+        {
+          "source": "PER-060",
+          "relation": "potentially_associated_with",
+          "target": "PER-058"
+        },
+        {
+          "source": "PER-058",
+          "relation": "associated_with",
+          "target": "VEH-016"
+        },
+        {
+          "source": "CASE",
+          "relation": "occurred_at",
+          "target": "LOC-016"
+        },
+        {
+          "source": "CASE",
+          "relation": "related_movement",
+          "target": "LOC-045"
+        },
+        {
+          "source": "OBJ-016",
+          "relation": "evidence_for",
+          "target": "CASE"
+        }
+      ]
+    }
+  ]
+}

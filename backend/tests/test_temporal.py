@@ -2,23 +2,32 @@ import pytest
 from backend.app.services.temporal_service import TemporalService
 
 
-def test_temporal_same_day():
-    score, diff, evidence = TemporalService.calculate_temporal_similarity("2026-05-10", "2026-05-10")
+def test_circular_clock_distance():
+    # 23:00 and 01:00 are only 2 hours apart across midnight
+    score_close, diff, ev = TemporalService.calculate_time_of_day_similarity(23, 1)
+    assert diff == 2
+    assert score_close >= 0.5
+    assert any("within 2 hour(s)" in e for e in ev)
+
+    # 14:00 and 15:00 are 1 hour apart
+    score_one_hr, diff_one, _ = TemporalService.calculate_time_of_day_similarity(14, 15)
+    assert diff_one == 1
+    assert score_one_hr > score_close
+
+
+def test_temporal_proximity_same_day():
+    score, days, evidence = TemporalService.calculate_temporal_similarity("2021-05-10", "2021-05-10")
     assert score == 1.0
-    assert diff == 0
-    assert any("exact same calendar date" in e for e in evidence)
+    assert days == 0
+    assert any("exact same date" in e.lower() for e in evidence)
 
 
-def test_temporal_nearby_days():
-    score_1, diff_1, ev_1 = TemporalService.calculate_temporal_similarity("2026-05-10", "2026-05-11")
-    score_5, diff_5, ev_5 = TemporalService.calculate_temporal_similarity("2026-05-10", "2026-05-15")
-    assert score_1 > score_5 > 0.0
-    assert diff_1 == 1
-    assert diff_5 == 5
+def test_temporal_proximity_decay():
+    score_near, days_near, _ = TemporalService.calculate_temporal_similarity("2021-05-10", "2021-05-13")
+    score_far, days_far, _ = TemporalService.calculate_temporal_similarity("2021-05-10", "2021-11-10")
 
-
-def test_temporal_distant_dates():
-    score, diff, evidence = TemporalService.calculate_temporal_similarity("2026-01-01", "2026-09-01", max_window_days=45)
-    assert score == 0.0
-    assert diff > 45
-    assert len(evidence) == 0
+    assert days_near == 3
+    assert days_far == 184
+    assert score_near > score_far
+    assert score_near > 0.70
+    assert score_far == 0.0  # Outside 90 days window

@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   X,
   ExternalLink,
-  ShieldAlert,
-  GitCommit,
+  ShieldCheck,
   Clock,
   MapPin,
   FileCode,
@@ -14,7 +13,8 @@ import {
   ArrowRight,
   TrendingUp,
   Layers,
-  Sparkles
+  Sparkles,
+  Wrench,
 } from 'lucide-react';
 import { RelationshipExplanation, RelationshipDebugResponse } from '../types/relationship';
 import { ConfidenceBadge } from './ConfidenceBadge';
@@ -56,41 +56,42 @@ export const RelationshipDetailModal: React.FC<RelationshipDetailModalProps> = (
       setDebugData(data);
       setShowDebugView(true);
     } catch (err: any) {
-      setDebugError(err.message || 'Failed to fetch debug metrics');
+      setDebugError(err.message || 'Failed to fetch debug telemetry');
     } finally {
       setLoadingDebug(false);
     }
   };
 
-  const bd = relationship.score_breakdown || {} as any;
-  const moBd = relationship.mo_breakdown;
-  const seqBd = relationship.sequence_breakdown;
-  const f = relationship.features;
+  const bd = relationship.score_breakdown || ({} as any);
 
-  const scoreMetrics = [
-    { label: 'Person Overlap', val: bd.person_overlap || 0, color: 'var(--accent-emerald)' },
-    { label: 'Vehicle Overlap', val: bd.vehicle_overlap || 0, color: 'var(--accent-amber)' },
-    { label: 'Object / Evidence Overlap', val: bd.object_overlap || 0, color: 'var(--accent-purple)' },
-    { label: 'Witness Recurrence', val: bd.witness_overlap || 0, color: '#ec4899' },
-    { label: 'Location Proximity', val: bd.location_similarity || 0, color: 'var(--accent-cyan)' },
-    { label: 'Temporal Decay', val: bd.temporal_similarity || 0, color: 'var(--accent-blue)' },
-    { label: 'Modus Operandi', val: bd.modus_operandi_similarity || 0, color: 'var(--accent-rose)' },
-    { label: 'Event Sequence Concordance', val: bd.event_sequence_similarity || 0, color: 'var(--accent-indigo)' },
-    { label: 'Semantic Text Similarity', val: bd.semantic_similarity || 0, color: 'var(--text-accent)' },
-    { label: 'Crime Type Alignment', val: bd.crime_type_similarity || 0, color: '#64748b' },
-  ].filter(m => m.val > 0);
+  const breakdownGauges = [
+    { label: 'Same City (Jurisdiction)', val: bd.same_city, color: 'var(--accent-cyan)' },
+    { label: 'Crime Code Match', val: bd.crime_code_match, color: 'var(--accent-indigo)' },
+    { label: 'Crime Description Match', val: bd.crime_description_match, color: 'var(--accent-blue)' },
+    { label: 'Crime Domain Match', val: bd.crime_domain_match, color: '#6366f1' },
+    { label: 'Weapon Category Match', val: bd.weapon_match, color: 'var(--accent-amber)' },
+    { label: 'Temporal Proximity', val: bd.temporal_proximity, color: 'var(--accent-emerald)' },
+    { label: 'Time-of-Day Window (24h Clock)', val: bd.time_of_day_proximity, color: '#0ea5e9' },
+    { label: 'Victim Profile Match', val: bd.victim_profile_similarity, color: 'var(--accent-rose)' },
+    { label: 'Semantic Text Cosine', val: bd.semantic_similarity, color: 'var(--text-accent)' },
+    { label: 'Compound Profile Boost', val: bd.compound_boost, color: '#16a34a' },
+    { label: 'Rarity IDF Adjustment', val: bd.rarity_adjustment, color: '#8b5cf6' },
+  ].filter((item) => (item.val !== undefined && item.val !== 0));
 
   return (
     <div
       style={{
         position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.45)',
-        backdropFilter: 'blur(3px)',
-        zIndex: 9999,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(15, 23, 42, 0.65)',
+        backdropFilter: 'blur(4px)',
+        zIndex: 100,
         display: 'flex',
-        justifyContent: 'center',
         alignItems: 'center',
+        justifyContent: 'center',
         padding: '20px',
       }}
       onClick={onClose}
@@ -99,299 +100,159 @@ export const RelationshipDetailModal: React.FC<RelationshipDetailModalProps> = (
         className="glass-panel"
         style={{
           width: '100%',
-          maxWidth: '740px',
+          maxWidth: '850px',
           maxHeight: '90vh',
           overflowY: 'auto',
           backgroundColor: '#ffffff',
           borderRadius: '12px',
-          boxShadow: 'var(--shadow-lg)',
           padding: '24px',
+          boxShadow: 'var(--shadow-xl)',
           position: 'relative',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '16px', marginBottom: '18px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '14px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent-cyan)', textTransform: 'uppercase' }}>
-                Multi-Signal Relationship Analysis
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Statistical Relationship Inspector
               </span>
               <ConfidenceBadge confidence={relationship.confidence} category={relationship.category} />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <button
-                onClick={() => { onClose(); onSelectCase(relationship.source_case); }}
-                className="btn btn-ghost"
-                style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '15px', color: 'var(--accent-cyan)', padding: '2px 6px' }}
+                onClick={() => { onSelectCase(relationship.source_case); onClose(); }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '18px', fontWeight: 800, color: 'var(--accent-cyan)' }}
               >
                 {relationship.source_case}
-                <ExternalLink size={13} style={{ marginLeft: '4px' }} />
               </button>
-              <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>↔</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '16px' }}>↔</span>
               <button
-                onClick={() => { onClose(); onSelectCase(relationship.target_case); }}
-                className="btn btn-ghost"
-                style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '15px', color: 'var(--accent-cyan)', padding: '2px 6px' }}
+                onClick={() => { onSelectCase(relationship.target_case); onClose(); }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '18px', fontWeight: 800, color: 'var(--accent-cyan)' }}
               >
                 {relationship.target_case}
-                <ExternalLink size={13} style={{ marginLeft: '4px' }} />
               </button>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}
+            className="btn btn-ghost"
+            style={{ padding: '6px' }}
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Supporting Signals & Primary Category */}
-        <div style={{ marginBottom: '18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-            Active Correlation Signals
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            <span style={{
-              fontSize: '11px',
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: '4px',
-              backgroundColor: '#e0f2fe',
-              color: '#0369a1',
-              border: '1px solid #bae6fd',
-              textTransform: 'uppercase',
-            }}>
-              Primary: {relationship.relationship_type.replace(/_/g, ' ')}
-            </span>
-            {(relationship.supporting_signals || []).map((sig, idx) => (
-              <span key={idx} style={{
-                fontSize: '11px',
-                fontFamily: 'var(--font-mono)',
-                padding: '3px 8px',
-                borderRadius: '4px',
-                backgroundColor: '#f1f5f9',
-                color: 'var(--text-secondary)',
-                border: '1px solid var(--border-subtle)',
-              }}>
-                ✓ {sig.replace(/_/g, ' ')}
+        {/* Signals */}
+        {relationship.supporting_signals && relationship.supporting_signals.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
+            {relationship.supporting_signals.map((sig, i) => (
+              <span
+                key={i}
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: 'var(--accent-cyan)',
+                  backgroundColor: '#f0f9ff',
+                  border: '1px solid #bae6fd',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                }}
+              >
+                #{sig.replace(/_/g, ' ')}
               </span>
             ))}
           </div>
+        )}
+
+        {/* Natural Language Evidence Bullets */}
+        <div style={{ backgroundColor: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-subtle)', marginBottom: '20px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <ShieldCheck size={14} color="#0284c7" />
+            <span>Corroborating Incident Evidence</span>
+          </div>
+          <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            {relationship.evidence.map((ev, i) => (
+              <li key={i}>{ev}</li>
+            ))}
+          </ul>
         </div>
 
-        {/* Structured Evidence Bullets */}
+        {/* Mathematical Feature Breakdown Gauges */}
         <div style={{ marginBottom: '20px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <CheckCircle2 size={15} color="var(--accent-cyan)" />
-            <span>Investigative Rationale & Evidence</span>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '10px' }}>
+            Mathematical Score Components
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {relationship.evidence.map((ev, i) => (
-              <div key={i} style={{
-                fontSize: '12.5px',
-                color: 'var(--text-secondary)',
-                backgroundColor: '#f8fafc',
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: '1px solid var(--border-subtle)',
-                lineHeight: 1.45,
-              }}>
-                • {ev}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '10px' }}>
+            {breakdownGauges.map((g, i) => (
+              <div key={i} style={{ backgroundColor: '#ffffff', border: '1px solid var(--border-subtle)', padding: '8px 12px', borderRadius: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11.5px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{g.label}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: g.color }}>+{g.val.toFixed(3)}</span>
+                </div>
+                <div style={{ height: '4px', backgroundColor: '#f1f5f9', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.min(100, Math.max(0, g.val * 350))}%`, backgroundColor: g.color }} />
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Modus Operandi Breakdown (Matching vs Differing) */}
-        {(moBd || (f && (f.mo_matching || f.mo_differing_a))) && (
-          <div style={{ marginBottom: '20px', padding: '14px', backgroundColor: '#faf5ff', borderRadius: '8px', border: '1px solid #f3e8ff' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#6b21a8', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Layers size={15} color="#7c3aed" />
-              <span>Modus Operandi Breakdown (Set/Vector Concordance)</span>
+        {/* Debug Drawer Toggle */}
+        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button
+            onClick={handleLoadDebug}
+            disabled={loadingDebug}
+            className="btn btn-secondary"
+            style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <FileCode size={13} />
+            <span>{showDebugView ? 'Hide Raw Math Telemetry' : 'Inspect Raw Scoring Math & Weights'}</span>
+          </button>
+
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={() => { onSelectCase(relationship.source_case); onClose(); }}
+              className="btn btn-secondary"
+              style={{ fontSize: '12px' }}
+            >
+              View {relationship.source_case}
+            </button>
+            <button
+              onClick={() => { onSelectCase(relationship.target_case); onClose(); }}
+              className="btn btn-primary"
+              style={{ fontSize: '12px' }}
+            >
+              View {relationship.target_case}
+            </button>
+          </div>
+        </div>
+
+        {/* Raw Math Telemetry Inspector */}
+        {showDebugView && debugData && (
+          <div style={{ marginTop: '16px', backgroundColor: '#0f172a', color: '#f8fafc', padding: '16px', borderRadius: '8px', fontSize: '12px', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', borderBottom: '1px solid #334155', paddingBottom: '6px' }}>
+              <span style={{ color: '#38bdf8', fontWeight: 700 }}>Scoring Decision: {debugData.decision}</span>
+              <span style={{ color: '#94a3b8' }}>Threshold: {debugData.threshold} | Final Score: {debugData.final_score}</span>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11.5px' }}>
-              {/* Matching */}
-              <div>
-                <span style={{ fontWeight: 700, color: 'var(--accent-emerald)', display: 'block', marginBottom: '3px' }}>
-                  Matching Techniques:
-                </span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                  {(moBd?.matching || f?.mo_matching || []).length > 0 ? (
-                    (moBd?.matching || f?.mo_matching || []).map((m, i) => (
-                      <span key={i} style={{ backgroundColor: '#dcfce7', color: '#166534', padding: '2px 6px', borderRadius: '4px', fontFamily: 'var(--font-mono)' }}>
-                        ✓ {m}
-                      </span>
-                    ))
-                  ) : (
-                    <span style={{ color: 'var(--text-muted)' }}>None directly overlapping</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Differing */}
-              {(moBd?.differing_a?.length || moBd?.differing_b?.length || f?.mo_differing_a?.length || f?.mo_differing_b?.length) ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
-                  <div>
-                    <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>
-                      Distinct to {relationship.source_case}:
-                    </span>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
-                      {(moBd?.differing_a || f?.mo_differing_a || []).map((m, i) => (
-                        <span key={i} style={{ backgroundColor: '#f1f5f9', color: 'var(--text-secondary)', padding: '1px 5px', borderRadius: '3px', fontSize: '10.5px' }}>
-                          {m}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>
-                      Distinct to {relationship.target_case}:
-                    </span>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
-                      {(moBd?.differing_b || f?.mo_differing_b || []).map((m, i) => (
-                        <span key={i} style={{ backgroundColor: '#f1f5f9', color: 'var(--text-secondary)', padding: '1px 5px', borderRadius: '3px', fontSize: '10.5px' }}>
-                          {m}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
+            <div style={{ marginBottom: '10px' }}>
+              <div style={{ color: '#94a3b8', marginBottom: '4px' }}>Active Weights:</div>
+              <pre style={{ margin: 0, color: '#e2e8f0', fontSize: '11px' }}>
+                {JSON.stringify(debugData.weights, null, 2)}
+              </pre>
+            </div>
+            <div>
+              <div style={{ color: '#94a3b8', marginBottom: '4px' }}>Score Breakdown:</div>
+              <pre style={{ margin: 0, color: '#34d399', fontSize: '11px' }}>
+                {JSON.stringify(debugData.score_breakdown, null, 2)}
+              </pre>
             </div>
           </div>
         )}
-
-        {/* Behavioural Sequence Alignment (LCS) */}
-        {(seqBd?.lcs?.length || f?.event_common_subsequence?.length) ? (
-          <div style={{ marginBottom: '20px', padding: '14px', backgroundColor: '#eef2ff', borderRadius: '8px', border: '1px solid #e0e7ff' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#3730a3', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <GitCommit size={15} color="#4f46e5" />
-              <span>Behavioural Event-Chain Concordance (LCS Alignment)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-              {(seqBd?.lcs || f?.event_common_subsequence || []).map((step, idx, arr) => (
-                <React.Fragment key={idx}>
-                  <span style={{
-                    backgroundColor: '#ffffff',
-                    color: '#312e81',
-                    padding: '3px 8px',
-                    borderRadius: '4px',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    border: '1px solid #c7d2fe',
-                  }}>
-                    {step}
-                  </span>
-                  {idx < arr.length - 1 && <span style={{ color: '#818cf8', fontWeight: 800 }}>→</span>}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {/* Continuous Score Breakdown Meters */}
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <TrendingUp size={15} color="var(--accent-blue)" />
-            <span>Multi-Factor Metric Contributions</span>
-          </div>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '10px',
-            backgroundColor: '#f8fafc',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '8px',
-            padding: '12px',
-          }}>
-            {scoreMetrics.map((item, idx) => (
-              <div key={idx}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>
-                  <span>{item.label}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: item.color }}>
-                    {(item.val * 100).toFixed(0)}%
-                  </span>
-                </div>
-                <div style={{ height: '4px', backgroundColor: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%',
-                    width: `${Math.min(100, item.val * 100)}%`,
-                    backgroundColor: item.color,
-                    borderRadius: '2px',
-                  }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Debug / Deep Dive Section */}
-        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '14px', marginTop: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              Developer / Analyst Inspection Mode
-            </div>
-            <button
-              onClick={handleLoadDebug}
-              disabled={loadingDebug}
-              className="btn btn-secondary"
-              style={{ fontSize: '11.5px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <FileCode size={13} color="var(--accent-cyan)" />
-              <span>{loadingDebug ? 'Loading Engine State...' : showDebugView ? 'Hide Raw Debug' : 'Inspect Engine Diagnostics'}</span>
-            </button>
-          </div>
-
-          {debugError && (
-            <div style={{ marginTop: '8px', padding: '8px 10px', backgroundColor: '#fee2e2', color: '#991b1b', fontSize: '11px', borderRadius: '4px' }}>
-              {debugError}
-            </div>
-          )}
-
-          {showDebugView && debugData && (
-            <div style={{ marginTop: '12px', backgroundColor: '#0f172a', color: '#f8fafc', padding: '14px', borderRadius: '8px', fontFamily: 'var(--font-mono)', fontSize: '11px', overflowX: 'auto' }}>
-              <div style={{ color: '#38bdf8', fontWeight: 700, marginBottom: '6px' }}>
-                // RELATIONSHIP ENGINE INFERENCE DIAGNOSTICS
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-                <div>
-                  <span style={{ color: '#94a3b8' }}>Decision: </span>
-                  <span style={{ color: '#4ade80', fontWeight: 700 }}>{debugData.decision}</span>
-                </div>
-                <div>
-                  <span style={{ color: '#94a3b8' }}>Calibrated Final Score: </span>
-                  <span style={{ color: '#f59e0b', fontWeight: 700 }}>{debugData.final_score.toFixed(4)}</span>
-                </div>
-                <div>
-                  <span style={{ color: '#94a3b8' }}>Threshold Cutoff: </span>
-                  <span>{debugData.threshold}</span>
-                </div>
-                <div>
-                  <span style={{ color: '#94a3b8' }}>Candidate Trigger Sources: </span>
-                  <span>{debugData.candidate_reasons.join(', ')}</span>
-                </div>
-              </div>
-
-              <div style={{ borderTop: '1px solid #334155', paddingTop: '8px', marginTop: '8px' }}>
-                <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Weighted Factor Products:</span>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '6px' }}>
-                  {Object.entries(debugData.score_breakdown).map(([k, v]) => (
-                    <div key={k} style={{ fontSize: '10px', color: '#cbd5e1' }}>
-                      {k}: <span style={{ color: '#38bdf8' }}>{Number(v).toFixed(4)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

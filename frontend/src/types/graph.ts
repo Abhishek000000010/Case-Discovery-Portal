@@ -12,6 +12,8 @@ export interface GraphEdge {
   source: string;
   target: string;
   relationship_type: string;
+  relationship_type_label?: string;
+  edge_label?: string;
   confidence: number;
   category: 'DIRECT' | 'STRONG' | 'MODERATE' | 'WEAK' | string;
   evidence: string[];

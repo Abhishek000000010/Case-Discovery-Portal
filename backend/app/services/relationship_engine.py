@@ -1,20 +1,17 @@
 import math
 from typing import List, Dict, Any, Set, Tuple, Optional
-from itertools import combinations
 from collections import Counter
 
 from backend.app.models.case_models import CaseModel
-from backend.app.models.entity_models import PersonEntity, LocationEntity, VehicleEntity, ObjectEntity
 from backend.app.models.relationship_models import (
     RelationshipFeatures,
     RelationshipScoreBreakdown,
     RelationshipExplanation,
     CandidatePair,
+    RelationshipDebugResponse,
 )
 from backend.app.services.geographic_service import GeographicService
 from backend.app.services.temporal_service import TemporalService
-from backend.app.services.modus_operandi_service import ModusOperandiService
-from backend.app.services.event_sequence_service import EventSequenceService
 from backend.app.services.semantic_similarity import SemanticSimilarityService
 from backend.app.services.relationship_explanation_service import RelationshipExplanationService
 from backend.app.utils.scoring import clamp_score, categorize_confidence
@@ -22,484 +19,397 @@ from backend.app.utils.scoring import clamp_score, categorize_confidence
 
 class RelationshipEngine:
     """
-    Layered, explainable Case Relationship Intelligence Engine.
-    Operates strictly autonomously without ground truth access.
-    
-    Pipeline Stages:
-    1. Normalization & Corpus Frequency Indexing (Rarity / Discriminative Power)
-    2. Candidate Generation (Multi-Signal indexing with stored reasons)
-    3. Feature Extraction (Structured RelationshipFeatures vector)
-    4. Rarity-Aware Scoring & Evidence Quality Weighting
-    5. Multi-Signal Classification (Primary type + Supporting signals)
-    6. Evidence Generation (Via RelationshipExplanationService)
-    7. Confidence Calibration (VERY HIGH, HIGH, MODERATE, WEAK, IGNORE)
+    Data-driven, explainable Case Relationship Intelligence Engine for real Indian crime data.
+    Scales to 40,000+ records via inverted index candidate generation and on-demand
+    scoring with cached top relationships.
     """
 
     def __init__(
         self,
         config: Dict[str, Any],
-        semantic_service: Optional[SemanticSimilarityService] = None
+        semantic_service: Optional[SemanticSimilarityService] = None,
     ):
         self.config = config
         self.weights = config.get("weights", {})
         self.thresholds = config.get("thresholds", {})
         self.semantic_service = semantic_service or SemanticSimilarityService()
 
-        # Corpus frequency counters for Rarity-Aware Scoring
-        self.total_corpus_cases: int = 120
-        self.person_frequencies: Counter = Counter()
-        self.vehicle_frequencies: Counter = Counter()
-        self.object_frequencies: Counter = Counter()
-        self.tag_frequencies: Counter = Counter()
-        self.mo_frequencies: Counter = Counter()
-        self.crime_type_frequencies: Counter = Counter()
+        # Corpus frequencies for IDF rarity calculations
+        self.total_corpus_cases: int = 1
+        self.crime_code_frequencies: Counter = Counter()
+        self.crime_desc_frequencies: Counter = Counter()
+        self.weapon_frequencies: Counter = Counter()
+        self.city_frequencies: Counter = Counter()
 
-    def build_corpus_frequencies(self, cases: List[CaseModel]):
+        # Inverted indices for candidate retrieval
+        self.cases: List[CaseModel] = []
+        self.case_map: Dict[str, CaseModel] = {}
+        self.city_index: Dict[str, List[int]] = {}
+        self.crime_code_index: Dict[int, List[int]] = {}
+        self.crime_desc_index: Dict[str, List[int]] = {}
+        self.weapon_index: Dict[str, List[int]] = {}
+        self.domain_index: Dict[str, List[int]] = {}
+        self.city_crime_index: Dict[Tuple[str, int], List[int]] = {}
+
+        # Relationship cache: case_id -> List[RelationshipExplanation]
+        self._relationship_cache: Dict[str, List[RelationshipExplanation]] = {}
+
+    def index_corpus(self, cases: List[CaseModel]):
         """
-        Computes occurrence frequencies across the case corpus to quantify
-        feature rarity (Inverse Document Frequency / discriminative power).
+        Builds inverted indices and frequency tables across the entire case corpus.
+        Executes in milliseconds.
         """
+        self.cases = cases
         self.total_corpus_cases = max(len(cases), 1)
-        self.person_frequencies.clear()
-        self.vehicle_frequencies.clear()
-        self.object_frequencies.clear()
-        self.tag_frequencies.clear()
-        self.mo_frequencies.clear()
-        self.crime_type_frequencies.clear()
+        self.case_map = {c.case_id: c for c in cases}
 
-        for c in cases:
-            self.crime_type_frequencies[c.case_type] += 1
-            for p in c.people_involved:
-                self.person_frequencies[p.person_id] += 1
-            for v in c.vehicles:
-                self.vehicle_frequencies[v.vehicle_id] += 1
-            for o in c.objects:
-                self.object_frequencies[o.object_id] += 1
-            for t in c.tags:
-                self.tag_frequencies[t] += 1
-            for mo in c.modus_operandi:
-                self.mo_frequencies[mo] += 1
+        self.crime_code_frequencies.clear()
+        self.crime_desc_frequencies.clear()
+        self.weapon_frequencies.clear()
+        self.city_frequencies.clear()
 
-    def calculate_rarity_multiplier(
-        self,
-        shared_persons: Set[str],
-        shared_vehicles: Set[str],
-        shared_objects: Set[str],
-        matching_mo: List[str]
-    ) -> float:
+        self.city_index.clear()
+        self.crime_code_index.clear()
+        self.crime_desc_index.clear()
+        self.weapon_index.clear()
+        self.domain_index.clear()
+        self.city_crime_index.clear()
+        self._relationship_cache.clear()
+
+        for idx, c in enumerate(cases):
+            city_key = (c.derived_features.city_key or c.location.city.lower()).strip()
+            code = c.incident.crime_code
+            desc_key = (c.derived_features.crime_key or c.incident.crime_description.lower()).strip()
+            weapon_key = (c.derived_features.weapon_key or "").strip()
+            domain_key = (c.derived_features.crime_domain_key or c.incident.crime_domain.lower()).strip()
+
+            self.city_frequencies[city_key] += 1
+            self.crime_code_frequencies[code] += 1
+            self.crime_desc_frequencies[desc_key] += 1
+            if weapon_key:
+                self.weapon_frequencies[weapon_key] += 1
+
+            self.city_index.setdefault(city_key, []).append(idx)
+            self.crime_code_index.setdefault(code, []).append(idx)
+            self.crime_desc_index.setdefault(desc_key, []).append(idx)
+            if weapon_key:
+                self.weapon_index.setdefault(weapon_key, []).append(idx)
+            self.domain_index.setdefault(domain_key, []).append(idx)
+            self.city_crime_index.setdefault((city_key, code), []).append(idx)
+
+    def calculate_rarity_multiplier(self, crime_code: int, weapon_key: Optional[str]) -> float:
         """
-        Rarity-Aware Scoring:
-        Features appearing in very few cases (e.g., a specific vehicle plate in 2 cases)
-        carry high discriminative power. Features appearing across 50+ cases carry low power.
+        Calculates IDF rarity factor. Rare crime codes or weapons increase discriminative value.
         """
-        if not (shared_persons or shared_vehicles or shared_objects or matching_mo):
-            return 1.0
-
         n = float(self.total_corpus_cases)
         idf_scores: List[float] = []
 
-        for pid in shared_persons:
-            freq = self.person_frequencies.get(pid, 1)
-            idf = math.log((n + 1.0) / (freq + 1.0)) + 1.0
-            idf_scores.append(idf)
+        code_freq = self.crime_code_frequencies.get(crime_code, 100)
+        idf_scores.append(math.log((n + 1.0) / (code_freq + 1.0)))
 
-        for vid in shared_vehicles:
-            freq = self.vehicle_frequencies.get(vid, 1)
-            idf = math.log((n + 1.0) / (freq + 1.0)) + 1.0
-            idf_scores.append(idf)
-
-        for oid in shared_objects:
-            freq = self.object_frequencies.get(oid, 1)
-            idf = math.log((n + 1.0) / (freq + 1.0)) + 1.0
-            idf_scores.append(idf)
-
-        for mo in matching_mo:
-            freq = self.mo_frequencies.get(mo, 5)
-            idf = math.log((n + 1.0) / (freq + 1.0)) + 1.0
-            idf_scores.append(idf)
+        if weapon_key:
+            weap_freq = self.weapon_frequencies.get(weapon_key, 1000)
+            idf_scores.append(math.log((n + 1.0) / (weap_freq + 1.0)))
 
         if not idf_scores:
             return 1.0
 
-        # Average normalized IDF multiplier (bounded between 0.85 and 1.25)
         avg_idf = sum(idf_scores) / len(idf_scores)
-        max_possible_idf = math.log(n + 1.0) + 1.0
-        normalized = avg_idf / max(max_possible_idf, 1.0)
+        max_possible_idf = math.log(n + 1.0)
+        ratio = avg_idf / max(max_possible_idf, 1.0)
+        return round(0.92 + (0.24 * ratio), 3)
 
-        # Scale to [0.90, 1.20]
-        return round(0.90 + (0.30 * normalized), 3)
-
-    def generate_candidate_pairs(
-        self,
-        cases: List[CaseModel],
-        location_map: Dict[str, LocationEntity]
-    ) -> List[CandidatePair]:
+    def get_candidate_case_indices(self, case: CaseModel, max_candidates: int = 250) -> List[int]:
         """
-        Stage 1: Scalable Multi-Signal Candidate Generation.
-        Generates candidate pairs from multiple independent signals and stores the
-        exact reasons why the pair was selected.
+        Fast candidate retrieval using inverted multi-attribute indices.
+        Retrieves cases sharing municipal jurisdiction, crime code/type, or weapon.
         """
-        person_index: Dict[str, Set[str]] = {}
-        vehicle_index: Dict[str, Set[str]] = {}
-        object_index: Dict[str, Set[str]] = {}
-        witness_index: Dict[str, Set[str]] = {}
-        location_index: Dict[str, Set[str]] = {}
-        mo_index: Dict[str, Set[str]] = {}
+        city_key = (case.derived_features.city_key or case.location.city.lower()).strip()
+        code = case.incident.crime_code
+        weapon_key = (case.derived_features.weapon_key or "").strip()
+        desc_key = (case.derived_features.crime_key or case.incident.crime_description.lower()).strip()
 
-        candidate_reasons: Dict[Tuple[str, str], Set[str]] = {}
+        candidate_counts: Counter = Counter()
 
-        for c in cases:
-            cid = c.case_id
-            for p in c.people_involved:
-                person_index.setdefault(p.person_id, set()).add(cid)
-            for v in c.vehicles:
-                vehicle_index.setdefault(v.vehicle_id, set()).add(cid)
-            for o in c.objects:
-                object_index.setdefault(o.object_id, set()).add(cid)
-            for w in c.witnesses:
-                witness_index.setdefault(w.person_id, set()).add(cid)
-            for loc in c.locations:
-                location_index.setdefault(loc.location_id, set()).add(cid)
-            for mo in c.modus_operandi:
-                mo_index.setdefault(mo, set()).add(cid)
+        # Highest priority: same city AND same crime code
+        for idx in self.city_crime_index.get((city_key, code), []):
+            candidate_counts[idx] += 4
 
-        def add_candidates(index: Dict[str, Set[str]], reason_tag: str):
-            for key, case_set in index.items():
-                if len(case_set) > 1:
-                    for c1, c2 in combinations(case_set, 2):
-                        pair = (c1, c2) if c1 < c2 else (c2, c1)
-                        candidate_reasons.setdefault(pair, set()).add(reason_tag)
+        # High priority: same crime code
+        for idx in self.crime_code_index.get(code, []):
+            candidate_counts[idx] += 3
 
-        add_candidates(person_index, "shared_person")
-        add_candidates(vehicle_index, "shared_vehicle")
-        add_candidates(object_index, "shared_object")
-        add_candidates(witness_index, "shared_witness")
-        add_candidates(location_index, "shared_location")
-        add_candidates(mo_index, "similar_modus_operandi")
+        # Medium priority: same city AND same weapon
+        if weapon_key:
+            for idx in self.weapon_index.get(weapon_key, []):
+                candidate_counts[idx] += 2
 
-        # Spatial-Temporal candidate generation
-        nearby_threshold = self.thresholds.get("geographic_nearby_km", 10.0)
-        window_days = self.thresholds.get("temporal_window_days", 60)
+        # Medium priority: same city AND same crime description
+        for idx in self.city_index.get(city_key, []):
+            candidate_counts[idx] += 1
 
-        for c1, c2 in combinations(cases, 2):
-            pair = (c1.case_id, c2.case_id) if c1.case_id < c2.case_id else (c2.case_id, c1.case_id)
-            d1 = TemporalService.parse_date_safe(c1.incident_date or c1.reported_date)
-            d2 = TemporalService.parse_date_safe(c2.incident_date or c2.reported_date)
+        for idx in self.crime_desc_index.get(desc_key, []):
+            candidate_counts[idx] += 1
 
-            if d1 and d2 and abs((d1 - d2).days) <= window_days:
-                geo_sim, min_dist, _, _ = GeographicService.compare_case_locations(
-                    c1.locations, c2.locations, location_map
-                )
-                if geo_sim >= 0.50:  # <= 10 km
-                    candidate_reasons.setdefault(pair, set()).add("geographic_temporal_proximity")
+        # Remove self
+        self_idx = next((i for i, c in enumerate(self.cases) if c.case_id == case.case_id), None)
+        if self_idx is not None and self_idx in candidate_counts:
+            del candidate_counts[self_idx]
 
-        return [
-            CandidatePair(
-                case_a_id=p[0],
-                case_b_id=p[1],
-                candidate_reasons=sorted(list(reasons))
-            )
-            for p, reasons in candidate_reasons.items()
-        ]
+        sorted_candidates = [idx for idx, _ in candidate_counts.most_common(max_candidates)]
+        return sorted_candidates
 
-    def extract_features(
-        self,
-        case_a: CaseModel,
-        case_b: CaseModel,
-        location_map: Dict[str, LocationEntity],
-        vehicle_map: Dict[str, VehicleEntity],
-        person_map: Dict[str, PersonEntity],
-        object_map: Dict[str, ObjectEntity],
-    ) -> RelationshipFeatures:
+    def extract_features(self, case_a: CaseModel, case_b: CaseModel) -> RelationshipFeatures:
         """
-        Stage 2: Feature Extraction.
-        Produces structured RelationshipFeatures vector containing all 15+ numeric metrics.
-        Never blends raw values inside an opaque formula.
+        Extracts multi-signal empirical feature vector between two real cases.
         """
         f = RelationshipFeatures()
 
-        # 1. Person Overlap
-        p_ids_a = {p.person_id for p in case_a.people_involved}
-        p_ids_b = {p.person_id for p in case_b.people_involved}
-        shared_p = p_ids_a.intersection(p_ids_b)
-        f.person_overlap = 1.0 if shared_p else 0.0
+        # 1. Geographic / Municipal Jurisdiction
+        geo_sim, same_city, _ = GeographicService.compare_cases(case_a, case_b)
+        f.same_city = same_city
 
-        # 2. Witness Overlap
-        w_ids_a = {w.person_id for w in case_a.witnesses}
-        w_ids_b = {w.person_id for w in case_b.witnesses}
-        shared_w = w_ids_a.intersection(w_ids_b)
-        f.witness_overlap = 1.0 if shared_w else 0.0
-
-        # 3. Vehicle Overlap
-        v_ids_a = {v.vehicle_id for v in case_a.vehicles}
-        v_ids_b = {v.vehicle_id for v in case_b.vehicles}
-        shared_v = v_ids_a.intersection(v_ids_b)
-        f.vehicle_overlap = 1.0 if shared_v else 0.0
-
-        # 4. Object Overlap
-        o_ids_a = {o.object_id for o in case_a.objects}
-        o_ids_b = {o.object_id for o in case_b.objects}
-        shared_o = o_ids_a.intersection(o_ids_b)
-        f.object_overlap = 1.0 if shared_o else 0.0
-
-        # 5. Geographic Reasoning
-        geo_sim, dist_km, _, is_exact_loc = GeographicService.compare_case_locations(
-            case_a.locations, case_b.locations, location_map
+        # 2. Crime Specification
+        f.crime_code_match = (case_a.incident.crime_code == case_b.incident.crime_code)
+        f.crime_description_match = (
+            (case_a.derived_features.crime_key or case_a.incident.crime_description.lower())
+            == (case_b.derived_features.crime_key or case_b.incident.crime_description.lower())
         )
-        f.location_exact_match = is_exact_loc
-        f.location_distance_km = dist_km
-        f.location_similarity = clamp_score(geo_sim)
-
-        # 6. Temporal Reasoning
-        decay_constant = self.thresholds.get("temporal_decay_constant_days", 14.0)
-        temp_sim, days_diff, _ = TemporalService.compare_case_dates(
-            case_a, case_b, decay_constant_days=decay_constant
+        f.crime_domain_match = (
+            (case_a.derived_features.crime_domain_key or case_a.incident.crime_domain.lower())
+            == (case_b.derived_features.crime_domain_key or case_b.incident.crime_domain.lower())
         )
+
+        # 3. Weapon
+        weap_a = case_a.derived_features.weapon_key or (case_a.weapon.used or "").lower()
+        weap_b = case_b.derived_features.weapon_key or (case_b.weapon.used or "").lower()
+        f.weapon_match = bool(weap_a and weap_b and weap_a == weap_b)
+
+        # 4. Temporal Proximity
+        date_sim, tod_sim, days_diff, hour_diff, same_dow, _ = TemporalService.compare_cases(
+            case_a, case_b,
+            decay_constant_days=self.thresholds.get("temporal_decay_half_life_days", 14.0),
+            max_window_days=self.thresholds.get("temporal_window_days", 90),
+        )
+        f.temporal_similarity = date_sim
         f.incident_date_difference_days = days_diff
-        f.temporal_similarity = clamp_score(temp_sim)
+        f.time_of_day_similarity = tod_sim
+        f.hour_difference = hour_diff
+        f.same_day_of_week = same_dow
 
-        # 7. Modus Operandi (Structured set/vector comparison)
-        mo_res = ModusOperandiService.calculate_mo_similarity(
-            case_a.modus_operandi, case_b.modus_operandi
+        # 5. Victim Profile
+        v_age_a = case_a.victim.age
+        v_age_b = case_b.victim.age
+        if v_age_a is not None and v_age_b is not None:
+            age_diff = abs(v_age_a - v_age_b)
+            f.victim_age_difference = age_diff
+            f.victim_age_band_match = (case_a.victim.age_band == case_b.victim.age_band)
+        f.victim_gender_match = bool(
+            case_a.victim.gender and case_b.victim.gender and case_a.victim.gender == case_b.victim.gender
         )
-        f.modus_operandi_similarity = clamp_score(mo_res.score)
-        f.mo_matching = mo_res.matching
-        f.mo_differing_a = mo_res.differing_a
-        f.mo_differing_b = mo_res.differing_b
 
-        # 8. Event Sequence (Normalized LCS and Transitions)
-        seq_res = EventSequenceService.compare_event_sequences(
-            case_a.events, case_b.events
-        )
-        f.event_sequence_similarity = clamp_score(seq_res.score)
-        f.event_common_subsequence = seq_res.lcs
+        prof_sim = 0.0
+        if f.victim_gender_match:
+            prof_sim += 0.5
+        if f.victim_age_band_match:
+            prof_sim += 0.5
+        f.victim_profile_similarity = prof_sim
 
-        # 9. Semantic Text Similarity (Unified narrative comparison)
-        sem_sim, _ = self.semantic_service.compute_similarity(
-            case_a.case_id, case_b.case_id
-        )
-        f.semantic_similarity = clamp_score(sem_sim)
+        # 6. Semantic text similarity
+        sem_sim, _ = self.semantic_service.compute_similarity(case_a.case_id, case_b.case_id)
+        f.semantic_similarity = sem_sim
 
-        # 10. Tag Overlap
-        tags_a = set(case_a.tags)
-        tags_b = set(case_b.tags)
-        if tags_a and tags_b:
-            shared_tags = tags_a.intersection(tags_b)
-            f.tag_overlap = clamp_score(len(shared_tags) / max(len(tags_a), len(tags_b)))
+        # 7. Compound Profile Boost
+        # Extra confidence when municipal jurisdiction + crime code + weapon coincide
+        compound_boost = 0.0
+        if f.same_city and f.crime_code_match and f.weapon_match:
+            if f.incident_date_difference_days is not None and f.incident_date_difference_days <= 14:
+                compound_boost = 0.16
+            else:
+                compound_boost = 0.10
+        elif f.same_city and f.crime_description_match and f.weapon_match:
+            compound_boost = 0.06
+        elif f.same_city and f.crime_code_match:
+            compound_boost = 0.04
+        f.compound_score_boost = compound_boost
 
-        # 11. Crime Type Similarity (Purely based on category, NOT hardcoded scenario bypass)
-        if case_a.case_type == case_b.case_type:
-            f.crime_type_similarity = 1.0
-        else:
-            # Baseline type distance based on generic domain hierarchy
-            f.crime_type_similarity = 0.20
-
-        # 12. Direct Evidence Quality vs Contextual
-        has_direct = bool(shared_p or shared_v or shared_o)
-        f.direct_evidence_quality = 1.0 if has_direct else 0.0
-
-        # 13. Rarity Multiplier
-        f.rarity_multiplier = self.calculate_rarity_multiplier(
-            shared_p, shared_v, shared_o, f.mo_matching
-        )
+        # 8. Rarity multiplier
+        weapon_key = case_a.derived_features.weapon_key if f.weapon_match else None
+        f.rarity_multiplier = self.calculate_rarity_multiplier(case_a.incident.crime_code, weapon_key)
 
         return f
 
-    def score_case_pair(
-        self,
-        case_a: CaseModel,
-        case_b: CaseModel,
-        location_map: Dict[str, LocationEntity],
-        vehicle_map: Dict[str, VehicleEntity],
-        person_map: Dict[str, PersonEntity],
-        object_map: Dict[str, ObjectEntity],
-        candidate_reasons: Optional[List[str]] = None
-    ) -> Optional[RelationshipExplanation]:
+    def score_features(
+        self, features: RelationshipFeatures
+    ) -> Tuple[float, RelationshipScoreBreakdown]:
         """
-        Stage 3, 4, 5, 6, 7:
-        Feature Extraction -> Rarity Scoring -> Classification -> Explanation -> Calibration.
+        Calculates mathematically explainable score breakdown and final confidence score.
         """
-        features = self.extract_features(
-            case_a, case_b, location_map, vehicle_map, person_map, object_map
-        )
-
-        entities_ctx = {
-            "person_map": person_map,
-            "vehicle_map": vehicle_map,
-            "object_map": object_map,
-            "location_map": location_map,
-        }
-
-        # Weighted composite score
         w = self.weights
-        base_composite = (
-            w.get("person_overlap", 0.22) * features.person_overlap +
-            w.get("vehicle_overlap", 0.18) * features.vehicle_overlap +
-            w.get("object_overlap", 0.12) * features.object_overlap +
-            w.get("location_proximity", 0.12) * features.location_similarity +
-            w.get("temporal_proximity", 0.12) * features.temporal_similarity +
-            w.get("modus_operandi_similarity", 0.14) * features.modus_operandi_similarity +
-            w.get("event_sequence_similarity", 0.10) * features.event_sequence_similarity +
-            w.get("semantic_similarity", 0.08) * features.semantic_similarity +
-            w.get("witness_overlap", 0.08) * features.witness_overlap +
-            w.get("tag_overlap", 0.04) * features.tag_overlap
-        )
 
-        # Apply rarity multiplier to reward rare discriminative features
-        rarity_adjusted = base_composite * features.rarity_multiplier
+        # Geographic contribution
+        s_city = (w.get("same_city", 0.20) * 1.0) if features.same_city else 0.0
 
-        # Evidence Quality Distinction:
-        # A shared physical identifier (person, vehicle, serial-matched object) represents
-        # high-quality direct forensic evidence.
-        final_score = rarity_adjusted
-        if features.direct_evidence_quality > 0.0:
-            final_score = max(final_score, 0.78 + (0.22 * rarity_adjusted))
+        # Crime specification contribution
+        if features.crime_code_match:
+            s_crime = w.get("crime_code_match", 0.25) * 1.0
+        elif features.crime_description_match:
+            s_crime = w.get("crime_description_match", 0.15) * 1.0
+        elif features.crime_domain_match:
+            s_crime = w.get("crime_domain_match", 0.08) * 1.0
         else:
-            # Multi-signal corroboration boost without direct identifier
-            corroboration_count = sum([
-                1 for val in [
-                    features.location_similarity >= 0.70,
-                    features.temporal_similarity >= 0.60,
-                    features.modus_operandi_similarity >= 0.60,
-                    features.event_sequence_similarity >= 0.60,
-                    features.semantic_similarity >= 0.50,
-                    features.witness_overlap > 0.0
-                ] if val
-            ])
-            if corroboration_count >= 4:
-                final_score = min(1.0, final_score * 1.30)
-            elif corroboration_count >= 3:
-                final_score = min(1.0, final_score * 1.15)
+            s_crime = 0.0
 
-        final_score = clamp_score(final_score)
+        # Weapon contribution
+        s_weapon = (w.get("weapon_match", 0.18) * 1.0) if features.weapon_match else 0.0
 
-        # False positive cutoff: Below 0.30 is ignored / not surfaced
-        min_conf = self.thresholds.get("minimum_confidence_for_ui", 0.30)
-        if final_score < min_conf:
-            return None
+        # Temporal proximity contribution
+        s_temporal = w.get("temporal_proximity", 0.15) * features.temporal_similarity
 
-        # Determine supporting signals list
-        supporting_signals: List[str] = []
-        if features.person_overlap > 0.0:
-            supporting_signals.append("shared_person")
-        if features.vehicle_overlap > 0.0:
-            supporting_signals.append("shared_vehicle")
-        if features.object_overlap > 0.0:
-            supporting_signals.append("shared_object")
-        if features.witness_overlap > 0.0:
-            supporting_signals.append("shared_witness")
-        if features.modus_operandi_similarity >= 0.60:
-            supporting_signals.append("similar_modus_operandi")
-        if features.event_sequence_similarity >= 0.60:
-            supporting_signals.append("similar_event_sequence")
-        if features.location_similarity >= 0.60:
-            supporting_signals.append("geographic_proximity")
-        if features.temporal_similarity >= 0.50:
-            supporting_signals.append("temporal_proximity")
-        if features.semantic_similarity >= 0.45:
-            supporting_signals.append("semantic_similarity")
+        # Time of day contribution
+        s_tod = w.get("time_of_day_proximity", 0.10) * features.time_of_day_similarity
 
-        # Determine Primary Relationship Type
-        if features.person_overlap > 0.0:
-            primary_rel = "same_person"
-        elif features.vehicle_overlap > 0.0:
-            primary_rel = "same_vehicle"
-        elif features.object_overlap > 0.0:
-            primary_rel = "same_object"
-        elif features.witness_overlap > 0.0:
-            primary_rel = "shared_witness"
-        elif features.modus_operandi_similarity >= 0.70 and features.event_sequence_similarity >= 0.60:
-            primary_rel = "behavioural_series"
-        elif features.modus_operandi_similarity >= 0.70:
-            primary_rel = "similar_modus_operandi"
-        elif features.location_exact_match and features.temporal_similarity >= 0.50:
-            primary_rel = "spatial_temporal_cluster"
-        elif features.location_similarity >= 0.75:
-            primary_rel = "geographic_proximity"
-        elif features.semantic_similarity >= 0.60:
-            primary_rel = "semantic_similarity"
-        else:
-            primary_rel = "multi_signal_correlation"
+        # Victim profile contribution
+        s_victim = w.get("victim_profile_similarity", 0.10) * features.victim_profile_similarity
 
-        # Evidence generation via dedicated service
-        evidence = RelationshipExplanationService.generate_explanation_bullets(
-            features, case_a, case_b, entities_ctx
-        )
+        # Semantic profile contribution
+        s_semantic = w.get("semantic_similarity", 0.12) * features.semantic_similarity
 
-        category = categorize_confidence(
-            final_score, self.thresholds, has_direct_match=(features.direct_evidence_quality > 0.0)
-        )
+        raw_sum = s_city + s_crime + s_weapon + s_temporal + s_tod + s_victim + s_semantic
+
+        # Compound boost
+        boost = features.compound_score_boost
+
+        # Rarity adjustment
+        rarity_adj = (raw_sum * features.rarity_multiplier) - raw_sum
+
+        final_score = (raw_sum + boost) * features.rarity_multiplier
+        final_score = round(max(0.0, min(1.0, final_score)), 3)
 
         breakdown = RelationshipScoreBreakdown(
-            person_overlap=features.person_overlap,
-            vehicle_overlap=features.vehicle_overlap,
-            object_overlap=features.object_overlap,
-            location_similarity=features.location_similarity,
-            temporal_similarity=features.temporal_similarity,
-            crime_type_similarity=features.crime_type_similarity,
-            modus_operandi_similarity=features.modus_operandi_similarity,
-            event_sequence_similarity=features.event_sequence_similarity,
-            semantic_similarity=features.semantic_similarity,
-            witness_overlap=features.witness_overlap,
-            tag_overlap=features.tag_overlap,
-            evidence_quality_boost=round(final_score - rarity_adjusted, 3),
-            rarity_adjustment=round(rarity_adjusted - base_composite, 3)
+            same_city=round(s_city, 3),
+            crime_code_match=round(s_crime if features.crime_code_match else 0.0, 3),
+            crime_description_match=round(s_crime if not features.crime_code_match and features.crime_description_match else 0.0, 3),
+            crime_domain_match=round(s_crime if not features.crime_description_match and features.crime_domain_match else 0.0, 3),
+            weapon_match=round(s_weapon, 3),
+            temporal_proximity=round(s_temporal, 3),
+            time_of_day_proximity=round(s_tod, 3),
+            victim_profile_similarity=round(s_victim, 3),
+            semantic_similarity=round(s_semantic, 3),
+            compound_boost=round(boost, 3),
+            rarity_adjustment=round(rarity_adj, 3),
         )
 
+        return final_score, breakdown
+
+    def compare_case_pair(
+        self, case_a: CaseModel, case_b: CaseModel
+    ) -> Optional[RelationshipExplanation]:
+        """
+        Direct pairwise comparison of two cases.
+        """
+        features = self.extract_features(case_a, case_b)
+        score, breakdown = self.score_features(features)
+
+        min_conf = self.thresholds.get("minimum_confidence_for_ui", 0.35)
+        if score < min_conf:
+            return None
+
+        # Build natural-language evidence
+        evidence = RelationshipExplanationService.generate_explanation_bullets(features, case_a, case_b)
+
+        # Supporting signals
+        signals = []
+        if features.same_city:
+            signals.append("same_city")
+        if features.crime_code_match:
+            signals.append("same_crime_code")
+        elif features.crime_description_match:
+            signals.append("same_crime_description")
+        if features.weapon_match:
+            signals.append("same_weapon")
+        if features.temporal_similarity >= 0.50:
+            signals.append("temporal_proximity")
+        if features.time_of_day_similarity >= 0.50:
+            signals.append("similar_time_of_day")
+        if features.compound_score_boost > 0:
+            signals.append("compound_profile_pattern")
+
+        # Categorize confidence & labels
+        category = RelationshipExplanationService.classify_confidence(score)
+        rel_type_label, edge_label = RelationshipExplanationService.get_relationship_labels(
+            features, score, case_a, case_b
+        )
+
+        matching_attrs = {
+            "city": case_a.location.city if features.same_city else None,
+            "crime_code": case_a.incident.crime_code if features.crime_code_match else None,
+            "crime_description": case_a.incident.crime_description if features.crime_description_match else None,
+            "weapon": case_a.weapon.used if features.weapon_match else None,
+        }
+        matching_attrs = {k: v for k, v in matching_attrs.items() if v is not None}
+
+        differing_attrs = {
+            "date_separation_days": features.incident_date_difference_days,
+            "hour_difference": features.hour_difference,
+            "victim_age_difference": features.victim_age_difference,
+        }
+        differing_attrs = {k: v for k, v in differing_attrs.items() if v is not None}
+
+        rel_id = f"REL::{case_a.case_id}::{case_b.case_id}"
+
         return RelationshipExplanation(
-            relationship_id=f"REL_{case_a.case_id}_{case_b.case_id}",
+            relationship_id=rel_id,
             source_case=case_a.case_id,
             target_case=case_b.case_id,
-            relationship_type=primary_rel,
-            primary_relationship_type=primary_rel,
-            supporting_signals=supporting_signals,
-            confidence=final_score,
+            relationship_type="similar_incident_profile",
+            relationship_type_label=rel_type_label,
+            edge_label=edge_label,
+            primary_relationship_type="similar_incident_profile",
+            supporting_signals=signals,
+            confidence=score,
             category=category,
             score_breakdown=breakdown,
             evidence=evidence,
             features=features,
-            mo_breakdown={
-                "matching": features.mo_matching,
-                "differing_a": features.mo_differing_a,
-                "differing_b": features.mo_differing_b,
-                "similarity": features.modus_operandi_similarity
-            },
-            sequence_breakdown={
-                "lcs": features.event_common_subsequence,
-                "similarity": features.event_sequence_similarity
-            }
+            matching_attributes=matching_attrs,
+            differing_attributes=differing_attrs,
         )
 
-    def discover_all_relationships(
+    def get_related_cases(
         self,
-        cases: List[CaseModel],
-        entities: Dict[str, Any]
+        case_id: str,
+        min_confidence: Optional[float] = None,
+        limit: int = 20,
     ) -> List[RelationshipExplanation]:
         """
-        Discovers all relationships across the entire case repository.
+        Fast on-demand retrieval of strongest related cases for a given case.
+        Results are cached for instant repeated retrieval.
         """
-        self.build_corpus_frequencies(cases)
-        self.semantic_service.fit_corpus(cases)
+        if case_id in self._relationship_cache:
+            results = self._relationship_cache[case_id]
+            if min_confidence is not None:
+                results = [r for r in results if r.confidence >= min_confidence]
+            return results[:limit]
 
-        candidates = self.generate_candidate_pairs(cases, entities["location_map"])
-        candidate_map = {(c.case_a_id, c.case_b_id): c.candidate_reasons for c in candidates}
+        target_case = self.case_map.get(case_id)
+        if not target_case:
+            return []
 
-        case_map = {c.case_id: c for c in cases}
-        discovered: List[RelationshipExplanation] = []
+        candidates = self.get_candidate_case_indices(target_case, max_candidates=250)
+        relationships: List[RelationshipExplanation] = []
 
-        for cand in candidates:
-            if cand.case_a_id in case_map and cand.case_b_id in case_map:
-                res = self.score_case_pair(
-                    case_map[cand.case_a_id],
-                    case_map[cand.case_b_id],
-                    entities["location_map"],
-                    entities["vehicle_map"],
-                    entities["person_map"],
-                    entities["object_map"],
-                    candidate_reasons=cand.candidate_reasons
-                )
-                if res is not None:
-                    discovered.append(res)
+        for c_idx in candidates:
+            other_case = self.cases[c_idx]
+            rel = self.compare_case_pair(target_case, other_case)
+            if rel:
+                relationships.append(rel)
 
-        discovered.sort(key=lambda r: r.confidence, reverse=True)
-        return discovered
+        # Sort descending by confidence
+        relationships.sort(key=lambda r: r.confidence, reverse=True)
+        self._relationship_cache[case_id] = relationships
+
+        if min_confidence is not None:
+            relationships = [r for r in relationships if r.confidence >= min_confidence]
+
+        return relationships[:limit]

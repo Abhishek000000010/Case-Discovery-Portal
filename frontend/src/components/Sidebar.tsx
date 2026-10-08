@@ -3,13 +3,21 @@ import {
   LayoutDashboard,
   FolderGit2,
   Share2,
-  Users,
+  Building2,
   Compass,
   CheckCircle2,
   ShieldCheck,
+  Fingerprint,
 } from 'lucide-react';
 
-export type NavTab = 'dashboard' | 'cases' | 'case-detail' | 'graph' | 'entities' | 'patterns' | 'evaluation';
+export type NavTab =
+  | 'dashboard'
+  | 'cases'
+  | 'case-detail'
+  | 'graph'
+  | 'intelligence-graph'
+  | 'entities'
+  | 'patterns';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -26,9 +34,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'cases', label: 'Cases Repository', icon: FolderGit2 },
     { id: 'graph', label: 'Graph Explorer', icon: Share2 },
-    { id: 'entities', label: 'Entities & People', icon: Users },
+    { id: 'intelligence-graph', label: 'Case Intelligence', icon: Fingerprint },
+    { id: 'entities', label: 'Entity Directory', icon: Building2 },
     { id: 'patterns', label: 'Patterns & Anomalies', icon: Compass },
-    { id: 'evaluation', label: 'Benchmark Evaluation', icon: CheckCircle2 },
   ];
 
   return (
@@ -58,42 +66,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#fff',
+            color: '#ffffff',
           }}>
             <ShieldCheck size={18} />
           </div>
           <div>
-            <h1 style={{ fontSize: '14px', fontWeight: 800, letterSpacing: '0.02em', color: 'var(--text-primary)', lineHeight: 1.2 }}>
-              INTELLIGENCE
-            </h1>
-            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              Case Discovery Portal
-            </span>
+            <div style={{
+              fontSize: '14px',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.01em',
+              lineHeight: 1.2,
+            }}>
+              Crime Intelligence
+            </div>
+            <div style={{
+              fontSize: '11px',
+              fontWeight: 500,
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}>
+              Discovery Portal
+            </div>
           </div>
-        </div>
-
-        <div style={{
-          marginTop: '6px',
-          padding: '3px 8px',
-          background: '#f8fafc',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: '4px',
-          fontSize: '10px',
-          color: 'var(--text-muted)',
-          fontFamily: 'var(--font-mono)',
-          textAlign: 'center',
-          fontWeight: 600,
-        }}>
-          DECISION SUPPORT SYSTEM
         </div>
       </div>
 
-      {/* Nav List */}
-      <nav style={{ flex: 1, padding: '16px 10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-        <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0 10px 8px', fontWeight: 700 }}>
-          Navigation
-        </div>
-
+      {/* Navigation List */}
+      <nav style={{
+        flex: 1,
+        padding: '16px 12px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+        overflowY: 'auto',
+      }}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentTab === item.id;
@@ -104,24 +112,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
-                width: '100%',
-                padding: '8px 12px',
+                gap: '12px',
+                padding: '9px 12px',
                 borderRadius: '6px',
-                background: isActive ? '#f0f9ff' : 'transparent',
+                border: 'none',
+                backgroundColor: isActive ? '#f0f9ff' : 'transparent',
                 color: isActive ? '#0284c7' : 'var(--text-secondary)',
-                border: isActive ? '1px solid #bae6fd' : '1px solid transparent',
-                fontSize: '13px',
                 fontWeight: isActive ? 600 : 500,
+                fontSize: '13px',
                 cursor: 'pointer',
                 textAlign: 'left',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) e.currentTarget.style.backgroundColor = '#f8fafc';
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
+                width: '100%',
+                transition: 'background-color 0.15s, color 0.15s',
               }}
             >
               <Icon size={16} color={isActive ? '#0284c7' : 'var(--text-muted)'} />
@@ -130,10 +132,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
 
+        {/* Active Selected Case Indicator */}
         {selectedCaseId && (
-          <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0 10px 6px', fontWeight: 700 }}>
-              Active Dossier
+          <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
+            <div style={{
+              fontSize: '10px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              color: 'var(--text-muted)',
+              padding: '0 12px 6px',
+            }}>
+              Active Investigation
             </div>
             <button
               onClick={() => onSelectTab('case-detail')}
@@ -141,12 +151,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                width: '100%',
                 padding: '8px 12px',
                 borderRadius: '6px',
-                background: currentTab === 'case-detail' ? '#f0fdf4' : '#f8fafc',
-                color: currentTab === 'case-detail' ? '#15803d' : 'var(--text-primary)',
-                border: currentTab === 'case-detail' ? '1px solid #bbf7d0' : '1px solid var(--border-subtle)',
+                border: currentTab === 'case-detail' ? '1px solid #bae6fd' : '1px solid transparent',
+                backgroundColor: currentTab === 'case-detail' ? '#f0f9ff' : '#f8fafc',
+                color: currentTab === 'case-detail' ? '#0284c7' : 'var(--text-secondary)',
+                width: '100%',
                 fontSize: '12px',
                 fontWeight: 600,
                 fontFamily: 'var(--font-mono)',
@@ -168,10 +178,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         fontSize: '11px',
         color: 'var(--text-muted)',
       }}>
-        <div style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '2px' }}>
-          Synthetic Benchmark
+        <div style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+          Dual Graph Architecture
         </div>
-        <div>120 Cases • Non-real records for intelligence evaluation.</div>
+        <div>• Real Network: 40,160 Cases</div>
+        <div>• Case Intelligence: 15 Demo Cases</div>
       </div>
     </aside>
   );

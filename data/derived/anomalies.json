@@ -1,0 +1,474 @@
+[
+  {
+    "anomaly_id": "ANOM::CLOSURE::IND-CASE-07454",
+    "case_id": "IND-CASE-07454",
+    "anomaly_type": "Prolonged Closure Duration",
+    "severity": "HIGH",
+    "score": 1.0,
+    "reason": "Case resolution required 729 days (>99th percentile across corpus).",
+    "city": "Pune",
+    "crime": "HOMICIDE",
+    "details": {
+      "closure_duration_days": 729.0,
+      "date_closed": "2022-11-07T08:00:00",
+      "date_occurred": "2020-06-11T13:00:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::CLOSURE::IND-CASE-18633",
+    "case_id": "IND-CASE-18633",
+    "anomaly_type": "Prolonged Closure Duration",
+    "severity": "HIGH",
+    "score": 1.0,
+    "reason": "Case resolution required 729 days (>99th percentile across corpus).",
+    "city": "Kanpur",
+    "crime": "SEXUAL ASSAULT",
+    "details": {
+      "closure_duration_days": 729.0,
+      "date_closed": "2024-02-16T14:00:00",
+      "date_occurred": "2022-02-15T13:13:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::CLOSURE::IND-CASE-23102",
+    "case_id": "IND-CASE-23102",
+    "anomaly_type": "Prolonged Closure Duration",
+    "severity": "HIGH",
+    "score": 1.0,
+    "reason": "Case resolution required 729 days (>99th percentile across corpus).",
+    "city": "Chennai",
+    "crime": "SEXUAL ASSAULT",
+    "details": {
+      "closure_duration_days": 729.0,
+      "date_closed": "2024-08-20T17:00:00",
+      "date_occurred": "2022-08-21T04:44:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::CLOSURE::IND-CASE-28183",
+    "case_id": "IND-CASE-28183",
+    "anomaly_type": "Prolonged Closure Duration",
+    "severity": "HIGH",
+    "score": 1.0,
+    "reason": "Case resolution required 729 days (>99th percentile across corpus).",
+    "city": "Mumbai",
+    "crime": "HOMICIDE",
+    "details": {
+      "closure_duration_days": 729.0,
+      "date_closed": "2025-03-18T19:00:00",
+      "date_occurred": "2023-03-21T05:21:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::CLOSURE::IND-CASE-04300",
+    "case_id": "IND-CASE-04300",
+    "anomaly_type": "Prolonged Closure Duration",
+    "severity": "HIGH",
+    "score": 1.0,
+    "reason": "Case resolution required 728 days (>99th percentile across corpus).",
+    "city": "Lucknow",
+    "crime": "SEXUAL ASSAULT",
+    "details": {
+      "closure_duration_days": 728.0,
+      "date_closed": "2022-06-26T08:00:00",
+      "date_occurred": "2020-06-28T14:37:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::CLOSURE::IND-CASE-09416",
+    "case_id": "IND-CASE-09416",
+    "anomaly_type": "Prolonged Closure Duration",
+    "severity": "HIGH",
+    "score": 1.0,
+    "reason": "Case resolution required 728 days (>99th percentile across corpus).",
+    "city": "Delhi",
+    "crime": "SEXUAL ASSAULT",
+    "details": {
+      "closure_duration_days": 728.0,
+      "date_closed": "2023-01-28T06:00:00",
+      "date_occurred": "2021-01-28T04:48:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::CLOSURE::IND-CASE-14921",
+    "case_id": "IND-CASE-14921",
+    "anomaly_type": "Prolonged Closure Duration",
+    "severity": "HIGH",
+    "score": 1.0,
+    "reason": "Case resolution required 728 days (>99th percentile across corpus).",
+    "city": "Delhi",
+    "crime": "HOMICIDE",
+    "details": {
+      "closure_duration_days": 728.0,
+      "date_closed": "2023-09-13T19:00:00",
+      "date_occurred": "2021-09-13T21:16:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::CLOSURE::IND-CASE-16998",
+    "case_id": "IND-CASE-16998",
+    "anomaly_type": "Prolonged Closure Duration",
+    "severity": "HIGH",
+    "score": 1.0,
+    "reason": "Case resolution required 728 days (>99th percentile across corpus).",
+    "city": "Hyderabad",
+    "crime": "SEXUAL ASSAULT",
+    "details": {
+      "closure_duration_days": 728.0,
+      "date_closed": "2023-12-10T01:00:00",
+      "date_occurred": "2021-09-12T05:00:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DEPLOY::IND-CASE-00015",
+    "case_id": "IND-CASE-00015",
+    "anomaly_type": "High Police Deployment Surge",
+    "severity": "MEDIUM",
+    "score": 1.0,
+    "reason": "Exceptional tactical mobilization: 19 officers deployed to incident scene.",
+    "city": "Bangalore",
+    "crime": "SEXUAL ASSAULT",
+    "details": {
+      "police_deployed": 19,
+      "weapon": "Unspecified"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DEPLOY::IND-CASE-00029",
+    "case_id": "IND-CASE-00029",
+    "anomaly_type": "High Police Deployment Surge",
+    "severity": "MEDIUM",
+    "score": 1.0,
+    "reason": "Exceptional tactical mobilization: 19 officers deployed to incident scene.",
+    "city": "Bangalore",
+    "crime": "VANDALISM",
+    "details": {
+      "police_deployed": 19,
+      "weapon": "Explosives"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DEPLOY::IND-CASE-00033",
+    "case_id": "IND-CASE-00033",
+    "anomaly_type": "High Police Deployment Surge",
+    "severity": "MEDIUM",
+    "score": 1.0,
+    "reason": "Exceptional tactical mobilization: 19 officers deployed to incident scene.",
+    "city": "Delhi",
+    "crime": "ILLEGAL POSSESSION",
+    "details": {
+      "police_deployed": 19,
+      "weapon": "Knife"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DEPLOY::IND-CASE-00056",
+    "case_id": "IND-CASE-00056",
+    "anomaly_type": "High Police Deployment Surge",
+    "severity": "MEDIUM",
+    "score": 1.0,
+    "reason": "Exceptional tactical mobilization: 19 officers deployed to incident scene.",
+    "city": "Meerut",
+    "crime": "BURGLARY",
+    "details": {
+      "police_deployed": 19,
+      "weapon": "Unspecified"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DEPLOY::IND-CASE-00065",
+    "case_id": "IND-CASE-00065",
+    "anomaly_type": "High Police Deployment Surge",
+    "severity": "MEDIUM",
+    "score": 1.0,
+    "reason": "Exceptional tactical mobilization: 19 officers deployed to incident scene.",
+    "city": "Visakhapatnam",
+    "crime": "DRUG OFFENSE",
+    "details": {
+      "police_deployed": 19,
+      "weapon": "Explosives"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DEPLOY::IND-CASE-00122",
+    "case_id": "IND-CASE-00122",
+    "anomaly_type": "High Police Deployment Surge",
+    "severity": "MEDIUM",
+    "score": 1.0,
+    "reason": "Exceptional tactical mobilization: 19 officers deployed to incident scene.",
+    "city": "Delhi",
+    "crime": "KIDNAPPING",
+    "details": {
+      "police_deployed": 19,
+      "weapon": "Other"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DEPLOY::IND-CASE-00131",
+    "case_id": "IND-CASE-00131",
+    "anomaly_type": "High Police Deployment Surge",
+    "severity": "MEDIUM",
+    "score": 1.0,
+    "reason": "Exceptional tactical mobilization: 19 officers deployed to incident scene.",
+    "city": "Agra",
+    "crime": "ARSON",
+    "details": {
+      "police_deployed": 19,
+      "weapon": "Poison"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DEPLOY::IND-CASE-00166",
+    "case_id": "IND-CASE-00166",
+    "anomaly_type": "High Police Deployment Surge",
+    "severity": "MEDIUM",
+    "score": 1.0,
+    "reason": "Exceptional tactical mobilization: 19 officers deployed to incident scene.",
+    "city": "Ahmedabad",
+    "crime": "VANDALISM",
+    "details": {
+      "police_deployed": 19,
+      "weapon": "Firearm"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DELAY::IND-CASE-21764",
+    "case_id": "IND-CASE-21764",
+    "anomaly_type": "Prolonged Reporting Delay",
+    "severity": "MEDIUM",
+    "score": 0.99,
+    "reason": "Significant lag of 71.0 hours between incident occurrence and official report registration.",
+    "city": "Delhi",
+    "crime": "CYBERCRIME",
+    "details": {
+      "report_delay_hours": 71.0,
+      "date_occurred": "2022-06-25T19:00:00",
+      "date_reported": "2022-06-28T18:00:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DELAY::IND-CASE-32373",
+    "case_id": "IND-CASE-32373",
+    "anomaly_type": "Prolonged Reporting Delay",
+    "severity": "MEDIUM",
+    "score": 0.99,
+    "reason": "Significant lag of 71.0 hours between incident occurrence and official report registration.",
+    "city": "Pune",
+    "crime": "COUNTERFEITING",
+    "details": {
+      "report_delay_hours": 71.0,
+      "date_occurred": "2023-10-09T20:00:00",
+      "date_reported": "2023-09-13T19:00:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DELAY::IND-CASE-34757",
+    "case_id": "IND-CASE-34757",
+    "anomaly_type": "Prolonged Reporting Delay",
+    "severity": "MEDIUM",
+    "score": 0.99,
+    "reason": "Significant lag of 71.0 hours between incident occurrence and official report registration.",
+    "city": "Delhi",
+    "crime": "FRAUD",
+    "details": {
+      "report_delay_hours": 70.9667,
+      "date_occurred": "2023-12-19T04:02:00",
+      "date_reported": "2023-12-22T03:00:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DELAY::IND-CASE-36962",
+    "case_id": "IND-CASE-36962",
+    "anomaly_type": "Prolonged Reporting Delay",
+    "severity": "MEDIUM",
+    "score": 0.99,
+    "reason": "Significant lag of 71.0 hours between incident occurrence and official report registration.",
+    "city": "Delhi",
+    "crime": "ARSON",
+    "details": {
+      "report_delay_hours": 70.9667,
+      "date_occurred": "2024-03-20T01:02:00",
+      "date_reported": "2024-03-23T00:00:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DELAY::IND-CASE-25708",
+    "case_id": "IND-CASE-25708",
+    "anomaly_type": "Prolonged Reporting Delay",
+    "severity": "MEDIUM",
+    "score": 0.99,
+    "reason": "Significant lag of 71.0 hours between incident occurrence and official report registration.",
+    "city": "Bangalore",
+    "crime": "CYBERCRIME",
+    "details": {
+      "report_delay_hours": 70.95,
+      "date_occurred": "2022-07-12T03:00:00",
+      "date_reported": "2022-12-10T02:00:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DELAY::IND-CASE-33438",
+    "case_id": "IND-CASE-33438",
+    "anomaly_type": "Prolonged Reporting Delay",
+    "severity": "MEDIUM",
+    "score": 0.99,
+    "reason": "Significant lag of 71.0 hours between incident occurrence and official report registration.",
+    "city": "Visakhapatnam",
+    "crime": "ASSAULT",
+    "details": {
+      "report_delay_hours": 70.95,
+      "date_occurred": "2023-10-25T05:03:00",
+      "date_reported": "2023-10-28T04:00:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DELAY::IND-CASE-15017",
+    "case_id": "IND-CASE-15017",
+    "anomaly_type": "Prolonged Reporting Delay",
+    "severity": "MEDIUM",
+    "score": 0.98,
+    "reason": "Significant lag of 70.9 hours between incident occurrence and official report registration.",
+    "city": "Lucknow",
+    "crime": "ARSON",
+    "details": {
+      "report_delay_hours": 70.8667,
+      "date_occurred": "2021-09-17T16:08:00",
+      "date_reported": "2021-09-20T15:00:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::DELAY::IND-CASE-16928",
+    "case_id": "IND-CASE-16928",
+    "anomaly_type": "Prolonged Reporting Delay",
+    "severity": "MEDIUM",
+    "score": 0.98,
+    "reason": "Significant lag of 70.8 hours between incident occurrence and official report registration.",
+    "city": "Pune",
+    "crime": "TRAFFIC VIOLATION",
+    "details": {
+      "report_delay_hours": 70.8,
+      "date_occurred": "2021-06-12T07:00:00",
+      "date_reported": "2021-12-09T06:00:00"
+    }
+  },
+  {
+    "anomaly_id": "ANOM::OPEN_RESOURCE::IND-CASE-00015",
+    "case_id": "IND-CASE-00015",
+    "anomaly_type": "Unresolved High-Resource Case",
+    "severity": "HIGH",
+    "score": 0.88,
+    "reason": "Active open status despite substantial mobilization (19 officers deployed).",
+    "city": "Bangalore",
+    "crime": "SEXUAL ASSAULT",
+    "details": {
+      "police_deployed": 19,
+      "status": "Open",
+      "year": 2020
+    }
+  },
+  {
+    "anomaly_id": "ANOM::OPEN_RESOURCE::IND-CASE-00029",
+    "case_id": "IND-CASE-00029",
+    "anomaly_type": "Unresolved High-Resource Case",
+    "severity": "HIGH",
+    "score": 0.88,
+    "reason": "Active open status despite substantial mobilization (19 officers deployed).",
+    "city": "Bangalore",
+    "crime": "VANDALISM",
+    "details": {
+      "police_deployed": 19,
+      "status": "Open",
+      "year": 2020
+    }
+  },
+  {
+    "anomaly_id": "ANOM::OPEN_RESOURCE::IND-CASE-00033",
+    "case_id": "IND-CASE-00033",
+    "anomaly_type": "Unresolved High-Resource Case",
+    "severity": "HIGH",
+    "score": 0.88,
+    "reason": "Active open status despite substantial mobilization (19 officers deployed).",
+    "city": "Delhi",
+    "crime": "ILLEGAL POSSESSION",
+    "details": {
+      "police_deployed": 19,
+      "status": "Open",
+      "year": 2020
+    }
+  },
+  {
+    "anomaly_id": "ANOM::OPEN_RESOURCE::IND-CASE-00056",
+    "case_id": "IND-CASE-00056",
+    "anomaly_type": "Unresolved High-Resource Case",
+    "severity": "HIGH",
+    "score": 0.88,
+    "reason": "Active open status despite substantial mobilization (19 officers deployed).",
+    "city": "Meerut",
+    "crime": "BURGLARY",
+    "details": {
+      "police_deployed": 19,
+      "status": "Open",
+      "year": 2020
+    }
+  },
+  {
+    "anomaly_id": "ANOM::OPEN_RESOURCE::IND-CASE-00065",
+    "case_id": "IND-CASE-00065",
+    "anomaly_type": "Unresolved High-Resource Case",
+    "severity": "HIGH",
+    "score": 0.88,
+    "reason": "Active open status despite substantial mobilization (19 officers deployed).",
+    "city": "Visakhapatnam",
+    "crime": "DRUG OFFENSE",
+    "details": {
+      "police_deployed": 19,
+      "status": "Open",
+      "year": 2020
+    }
+  },
+  {
+    "anomaly_id": "ANOM::OPEN_RESOURCE::IND-CASE-00131",
+    "case_id": "IND-CASE-00131",
+    "anomaly_type": "Unresolved High-Resource Case",
+    "severity": "HIGH",
+    "score": 0.88,
+    "reason": "Active open status despite substantial mobilization (19 officers deployed).",
+    "city": "Agra",
+    "crime": "ARSON",
+    "details": {
+      "police_deployed": 19,
+      "status": "Open",
+      "year": 2020
+    }
+  },
+  {
+    "anomaly_id": "ANOM::OPEN_RESOURCE::IND-CASE-00266",
+    "case_id": "IND-CASE-00266",
+    "anomaly_type": "Unresolved High-Resource Case",
+    "severity": "HIGH",
+    "score": 0.88,
+    "reason": "Active open status despite substantial mobilization (19 officers deployed).",
+    "city": "Chennai",
+    "crime": "IDENTITY THEFT",
+    "details": {
+      "police_deployed": 19,
+      "status": "Open",
+      "year": 2020
+    }
+  },
+  {
+    "anomaly_id": "ANOM::OPEN_RESOURCE::IND-CASE-00306",
+    "case_id": "IND-CASE-00306",
+    "anomaly_type": "Unresolved High-Resource Case",
+    "severity": "HIGH",
+    "score": 0.88,
+    "reason": "Active open status despite substantial mobilization (19 officers deployed).",
+    "city": "Faridabad",
+    "crime": "FIREARM OFFENSE",
+    "details": {
+      "police_deployed": 19,
+      "status": "Open",
+      "year": 2020
+    }
+  }
+]

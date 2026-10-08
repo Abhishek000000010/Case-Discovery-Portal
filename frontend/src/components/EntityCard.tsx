@@ -1,19 +1,15 @@
 import React from 'react';
-import { User, Car, MapPin, Box, AlertCircle, ArrowRight } from 'lucide-react';
+import { Building2, ShieldAlert, Wrench, Layers, ArrowRight, Share2 } from 'lucide-react';
 
 interface EntityCardProps {
-  type: 'PERSON' | 'VEHICLE' | 'LOCATION' | 'OBJECT';
+  type: 'CITY' | 'CRIME' | 'WEAPON' | 'DOMAIN';
   id: string;
   title: string;
   subtitle?: string;
   caseCount?: number;
-  cases?: string[];
-  roleDistribution?: Record<string, number>;
-  isAnomaly?: boolean;
-  anomalyLabel?: string;
-  notes?: string[];
-  onSelectCase?: (caseId: string) => void;
+  extraStats?: Record<string, any>;
   onExploreGraph?: (entityId: string) => void;
+  onFilterCases?: (type: string, value: string) => void;
 }
 
 export const EntityCard: React.FC<EntityCardProps> = ({
@@ -22,28 +18,26 @@ export const EntityCard: React.FC<EntityCardProps> = ({
   title,
   subtitle,
   caseCount = 0,
-  cases = [],
-  roleDistribution = {},
-  isAnomaly = false,
-  anomalyLabel,
-  onSelectCase,
+  extraStats = {},
   onExploreGraph,
+  onFilterCases,
 }) => {
   const iconMap = {
-    PERSON: User,
-    VEHICLE: Car,
-    LOCATION: MapPin,
-    OBJECT: Box,
-  };
-  const colorMap = {
-    PERSON: 'var(--accent-person)',
-    VEHICLE: 'var(--accent-vehicle)',
-    LOCATION: 'var(--accent-location)',
-    OBJECT: 'var(--accent-object)',
+    CITY: Building2,
+    CRIME: ShieldAlert,
+    WEAPON: Wrench,
+    DOMAIN: Layers,
   };
 
-  const Icon = iconMap[type];
-  const color = colorMap[type];
+  const colorMap = {
+    CITY: 'var(--accent-emerald)',
+    CRIME: 'var(--accent-amber)',
+    WEAPON: 'var(--accent-rose)',
+    DOMAIN: 'var(--accent-indigo)',
+  };
+
+  const Icon = iconMap[type] || Building2;
+  const color = colorMap[type] || '#0284c7';
 
   return (
     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
@@ -52,134 +46,99 @@ export const EntityCard: React.FC<EntityCardProps> = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{
-              width: '30px',
-              height: '30px',
+              width: '32px',
+              height: '32px',
               borderRadius: '6px',
-              backgroundColor: `${color}12`,
-              border: `1px solid ${color}28`,
+              backgroundColor: `${color}18`,
+              border: `1px solid ${color}35`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: color,
+              color,
             }}>
-              <Icon size={15} />
+              <Icon size={16} />
             </div>
             <div>
-              <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', fontWeight: 600 }}>
+                {type}
+              </span>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
                 {title}
-              </div>
-              <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                {id}
               </div>
             </div>
           </div>
 
-          {/* Anomaly badge with neutral investigative phrasing */}
-          {isAnomaly && (
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '2px 7px',
-              borderRadius: '4px',
-              backgroundColor: '#fef3c7',
-              border: '1px solid #fde68a',
-              color: '#92400e',
-              fontSize: '10px',
-              fontWeight: 700,
-              fontFamily: 'var(--font-mono)',
-            }}>
-              <AlertCircle size={10} />
-              <span>{anomalyLabel || 'RECURRENCE DETECTED'}</span>
-            </span>
-          )}
+          <span style={{
+            fontSize: '11px',
+            fontWeight: 700,
+            fontFamily: 'var(--font-mono)',
+            backgroundColor: '#f1f5f9',
+            color: 'var(--text-secondary)',
+            padding: '2px 8px',
+            borderRadius: '12px',
+          }}>
+            {caseCount.toLocaleString()} Cases
+          </span>
         </div>
 
         {subtitle && (
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 10px 0' }}>
             {subtitle}
-          </div>
+          </p>
         )}
 
-        {/* Case Appearances & Role distribution */}
-        <div style={{ marginBottom: '12px', backgroundColor: '#f8fafc', border: '1px solid var(--border-subtle)', padding: '8px 10px', borderRadius: '6px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', marginBottom: '4px' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Case File Involvement:</span>
-            <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-              {caseCount} incident{caseCount !== 1 ? 's' : ''}
-            </strong>
-          </div>
-
-          {Object.keys(roleDistribution).length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
-              {Object.entries(roleDistribution).map(([role, count]) => (
-                <span
-                  key={role}
-                  style={{
-                    fontSize: '10px',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'var(--text-secondary)',
-                    fontFamily: 'var(--font-mono)',
-                  }}
-                >
-                  {role}: {count}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Associated cases pills */}
-        {cases.length > 0 && (
-          <div style={{ marginBottom: '12px' }}>
-            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '5px' }}>
-              Linked Cases ({cases.length})
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-              {cases.slice(0, 8).map((cid) => (
-                <button
-                  key={cid}
-                  onClick={() => onSelectCase && onSelectCase(cid)}
-                  style={{
-                    fontSize: '11px',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    backgroundColor: '#f0f9ff',
-                    border: '1px solid #bae6fd',
-                    color: '#0284c7',
-                    fontFamily: 'var(--font-mono)',
-                    cursor: onSelectCase ? 'pointer' : 'default',
-                  }}
-                >
-                  {cid}
-                </button>
-              ))}
-              {cases.length > 8 && (
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', alignSelf: 'center' }}>
-                  +{cases.length - 8} more
-                </span>
-              )}
-            </div>
+        {/* Extra statistics */}
+        {Object.keys(extraStats).length > 0 && (
+          <div style={{
+            backgroundColor: '#f8fafc',
+            borderRadius: '6px',
+            padding: '8px 10px',
+            fontSize: '11.5px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            marginBottom: '12px',
+          }}>
+            {Object.entries(extraStats).map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>{k.replace(/_/g, ' ')}:</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{String(v)}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Footer Explore action */}
-      {onExploreGraph && (
-        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+      {/* Footer */}
+      <div style={{
+        paddingTop: '10px',
+        borderTop: '1px solid var(--border-subtle)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}>
+        {onExploreGraph ? (
           <button
-            onClick={() => onExploreGraph(id)}
             className="btn btn-ghost"
-            style={{ fontSize: '11.5px', padding: '3px 8px' }}
+            style={{ padding: '4px 8px', fontSize: '11px' }}
+            onClick={() => onExploreGraph(id)}
           >
-            <span>Network Context</span>
+            <Share2 size={12} />
+            <span>Graph View</span>
+          </button>
+        ) : <div />}
+
+        {onFilterCases && (
+          <button
+            className="btn btn-secondary"
+            style={{ padding: '4px 8px', fontSize: '11px' }}
+            onClick={() => onFilterCases(type, title)}
+          >
+            <span>Filter Cases</span>
             <ArrowRight size={12} />
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

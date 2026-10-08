@@ -1,52 +1,84 @@
 import React, { useEffect, useState } from 'react';
-import { FolderGit2, Grid, List as ListIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FolderGit2, Grid, List as ListIcon, ChevronLeft, ChevronRight, MapPin, Calendar, Wrench, ArrowRight } from 'lucide-react';
 import { CaseModel } from '../types/case';
 import { CaseCard } from '../components/CaseCard';
 import { FilterPanel } from '../components/FilterPanel';
-import { fetchCases } from '../services/api';
+import { fetchCases, fetchCities, fetchCrimes, fetchDomains, fetchWeapons } from '../services/api';
 
 interface CasesProps {
   onSelectCase: (caseId: string) => void;
+  onExploreGraph?: (caseId: string) => void;
 }
 
-export const Cases: React.FC<CasesProps> = ({ onSelectCase }) => {
+export const Cases: React.FC<CasesProps> = ({ onSelectCase, onExploreGraph }) => {
   const [cases, setCases] = useState<CaseModel[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(24);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
+  const [city, setCity] = useState('all');
   const [crimeType, setCrimeType] = useState('all');
-  const [severity, setSeverity] = useState('all');
+  const [crimeDomain, setCrimeDomain] = useState('all');
+  const [weapon, setWeapon] = useState('all');
   const [status, setStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('reported_date');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortBy, setSortBy] = useState('case_id');
+  const [sortOrder, setSortOrder] = useState('asc');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+
+  // Dimension filter lists
+  const [citiesList, setCitiesList] = useState<string[]>([]);
+  const [crimesList, setCrimesList] = useState<string[]>([]);
+  const [domainsList, setDomainsList] = useState<string[]>([]);
+  const [weaponsList, setWeaponsList] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function loadDimensions() {
+      try {
+        const [c, cr, d, w] = await Promise.all([
+          fetchCities(),
+          fetchCrimes(),
+          fetchDomains(),
+          fetchWeapons(),
+        ]);
+        setCitiesList(c.map((item) => item.name));
+        setCrimesList(cr.map((item) => item.name));
+        setDomainsList(d.map((item) => item.name));
+        setWeaponsList(w.map((item) => item.name));
+      } catch (err) {
+        console.error('Failed to load dimensions:', err);
+      }
+    }
+    loadDimensions();
+  }, []);
 
   useEffect(() => {
     loadCasesList();
-  }, [page, searchQuery, crimeType, severity, status, sortBy, sortOrder]);
+  }, [page, pageSize, searchQuery, city, crimeType, crimeDomain, weapon, status, sortBy, sortOrder]);
 
   async function loadCasesList() {
     try {
       setLoading(true);
       const res = await fetchCases({
         q: searchQuery,
-        crime_type: crimeType,
-        severity,
+        city,
+        crime_description: crimeType,
+        crime_domain: crimeDomain,
+        weapon,
         status,
         sort_by: sortBy,
         sort_order: sortOrder,
         page,
-        page_size: 15,
+        page_size: pageSize,
       });
       setCases(res.cases || []);
       setTotal(res.total || 0);
       setTotalPages(res.total_pages || 1);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load cases:', err);
     } finally {
       setLoading(false);
     }
@@ -54,71 +86,96 @@ export const Cases: React.FC<CasesProps> = ({ onSelectCase }) => {
 
   const handleResetFilters = () => {
     setSearchQuery('');
+    setCity('all');
     setCrimeType('all');
-    setSeverity('all');
+    setCrimeDomain('all');
+    setWeapon('all');
     setStatus('all');
-    setSortBy('reported_date');
-    setSortOrder('desc');
+    setSortBy('case_id');
+    setSortOrder('asc');
     setPage(1);
   };
 
   return (
     <div className="page-wrapper animate-fade-in">
-      {/* Header */}
-      <div className="page-header">
+      {/* Header bar */}
+      <div className="page-header" style={{ marginBottom: '16px' }}>
         <div>
-          <h1 className="page-title">
-            <FolderGit2 size={24} color="var(--accent-cyan)" />
-            <span>Case File Intelligence Repository</span>
-          </h1>
+          <h1 className="page-title">Case Incident Dossier Repository</h1>
           <p className="page-subtitle">
-            Catalog of {total} structured case reports with automated cross-incident relationship tracking.
+            Browse and filter {total.toLocaleString()} real Indian crime incident records.
           </p>
         </div>
 
         {/* View mode toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--bg-surface)', padding: '3px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
-          <button
-            onClick={() => setViewMode('grid')}
-            style={{
-              padding: '6px',
-              borderRadius: '4px',
-              border: 'none',
-              backgroundColor: viewMode === 'grid' ? 'var(--bg-surface-elevated)' : 'transparent',
-              color: viewMode === 'grid' ? 'var(--text-accent)' : 'var(--text-muted)',
-              cursor: 'pointer',
-            }}
-            title="Grid Card View"
-          >
-            <Grid size={16} />
-          </button>
-          <button
-            onClick={() => setViewMode('table')}
-            style={{
-              padding: '6px',
-              borderRadius: '4px',
-              border: 'none',
-              backgroundColor: viewMode === 'table' ? 'var(--bg-surface-elevated)' : 'transparent',
-              color: viewMode === 'table' ? 'var(--text-accent)' : 'var(--text-muted)',
-              cursor: 'pointer',
-            }}
-            title="Data Table View"
-          >
-            <ListIcon size={16} />
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{
+            display: 'flex',
+            backgroundColor: '#ffffff',
+            border: '1px solid var(--border-medium)',
+            borderRadius: '6px',
+            padding: '2px',
+          }}>
+            <button
+              onClick={() => setViewMode('grid')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '5px 10px',
+                borderRadius: '4px',
+                border: 'none',
+                backgroundColor: viewMode === 'grid' ? '#f0f9ff' : 'transparent',
+                color: viewMode === 'grid' ? '#0284c7' : 'var(--text-secondary)',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <Grid size={14} />
+              <span>Grid</span>
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '5px 10px',
+                borderRadius: '4px',
+                border: 'none',
+                backgroundColor: viewMode === 'table' ? '#f0f9ff' : 'transparent',
+                color: viewMode === 'table' ? '#0284c7' : 'var(--text-secondary)',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <ListIcon size={14} />
+              <span>Table</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Filter & Search Panel */}
+      {/* Filter Panel */}
       <FilterPanel
         searchQuery={searchQuery}
         onSearchChange={(q) => { setSearchQuery(q); setPage(1); }}
+        city={city}
+        onCityChange={(c) => { setCity(c); setPage(1); }}
+        citiesList={citiesList}
         crimeType={crimeType}
         onCrimeTypeChange={(ct) => { setCrimeType(ct); setPage(1); }}
-        severity={severity}
-        onSeverityChange={(s) => { setSeverity(s); setPage(1); }}
+        crimeTypesList={crimesList}
+        crimeDomain={crimeDomain}
+        onCrimeDomainChange={(cd) => { setCrimeDomain(cd); setPage(1); }}
+        domainsList={domainsList}
+        weapon={weapon}
+        onWeaponChange={(w) => { setWeapon(w); setPage(1); }}
+        weaponsList={weaponsList}
         status={status}
-        onStatusChange={(st) => { setStatus(st); setPage(1); }}
+        onStatusChange={(s) => { setStatus(s); setPage(1); }}
         sortBy={sortBy}
         onSortByChange={setSortBy}
         sortOrder={sortOrder}
@@ -126,22 +183,54 @@ export const Cases: React.FC<CasesProps> = ({ onSelectCase }) => {
         onReset={handleResetFilters}
       />
 
-      {/* Cases Content */}
+      {/* Results Count & Pagination Controls Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '16px',
+        fontSize: '12px',
+        color: 'var(--text-secondary)',
+      }}>
+        <div>
+          Showing <strong>{cases.length}</strong> of <strong>{total.toLocaleString()}</strong> case files
+          {searchQuery && <span> matching "{searchQuery}"</span>}
+          {city !== 'all' && <span> in {city}</span>}
+          {crimeType !== 'all' && <span> ({crimeType})</span>}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ color: 'var(--text-muted)' }}>Page {page} of {totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="btn btn-secondary"
+            style={{ padding: '5px 8px' }}
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            className="btn btn-secondary"
+            style={{ padding: '5px 8px' }}
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '300px', color: 'var(--text-accent)', fontFamily: 'var(--font-mono)' }}>
-          Loading cases directory...
+        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
+          Loading case repository records...
         </div>
       ) : cases.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          No cases match the specified search and filter criteria. Try resetting filters.
+        <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          No case records found matching the active filters.
         </div>
       ) : viewMode === 'grid' ? (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px',
-        }}>
+        <div className="grid grid-cols-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           {cases.map((c) => (
             <CaseCard
               key={c.case_id}
@@ -153,113 +242,111 @@ export const Cases: React.FC<CasesProps> = ({ onSelectCase }) => {
       ) : (
         /* Table View */
         <div className="glass-panel" style={{ overflowX: 'auto', marginBottom: '24px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+          <table className="table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-medium)', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.05em' }}>
-                <th style={{ padding: '12px 16px' }}>Case ID</th>
-                <th style={{ padding: '12px 16px' }}>Classification</th>
-                <th style={{ padding: '12px 16px' }}>Date</th>
-                <th style={{ padding: '12px 16px' }}>Location</th>
-                <th style={{ padding: '12px 16px' }}>Severity</th>
-                <th style={{ padding: '12px 16px' }}>Status</th>
-                <th style={{ padding: '12px 16px' }}>People</th>
-                <th style={{ padding: '12px 16px' }}>Relationships</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right' }}>Action</th>
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid var(--border-medium)', textAlign: 'left' }}>
+                <th style={{ padding: '10px 14px', fontWeight: 600 }}>Case ID</th>
+                <th style={{ padding: '10px 14px', fontWeight: 600 }}>Report #</th>
+                <th style={{ padding: '10px 14px', fontWeight: 600 }}>Crime Classification</th>
+                <th style={{ padding: '10px 14px', fontWeight: 600 }}>Jurisdiction</th>
+                <th style={{ padding: '10px 14px', fontWeight: 600 }}>Weapon</th>
+                <th style={{ padding: '10px 14px', fontWeight: 600 }}>Incident Date</th>
+                <th style={{ padding: '10px 14px', fontWeight: 600 }}>Victim</th>
+                <th style={{ padding: '10px 14px', fontWeight: 600 }}>Status</th>
+                <th style={{ padding: '10px 14px', fontWeight: 600, textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {cases.map((c) => (
-                <tr
-                  key={c.case_id}
-                  onClick={() => onSelectCase(c.case_id)}
-                  style={{
-                    borderBottom: '1px solid var(--border-subtle)',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                  <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent-cyan)' }}>
-                    {c.case_id}
-                  </td>
-                  <td style={{ padding: '12px 16px', textTransform: 'capitalize', color: 'var(--text-primary)' }}>
-                    {c.case_type.replace(/_/g, ' ')}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                    {c.incident_date || c.reported_date}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>
-                    {c.location_names && c.location_names.length > 0 ? c.location_names[0] : 'N/A'}
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span className={`badge badge-${c.severity.toLowerCase()}`}>
-                      {c.severity}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', textTransform: 'capitalize', color: 'var(--text-muted)' }}>
-                    {c.status.replace(/_/g, ' ')}
-                  </td>
-                  <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)' }}>
-                    {c.people_count ?? c.people_involved.length}
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: 700,
-                      color: (c.related_cases_count ?? 0) > 0 ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                    }}>
-                      {c.related_cases_count ?? 0} links
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectCase(c.case_id);
-                      }}
-                      className="btn btn-secondary"
-                      style={{ fontSize: '11px', padding: '4px 8px' }}
-                    >
-                      Dossier
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {cases.map((c) => {
+                const dateStr = (c.incident?.date_of_occurrence || c.incident?.time_of_occurrence || '').split('T')[0];
+                const isClosed = c.investigation?.case_closed;
+                return (
+                  <tr
+                    key={c.case_id}
+                    onClick={() => onSelectCase(c.case_id)}
+                    style={{ borderBottom: '1px solid var(--border-subtle)', cursor: 'pointer' }}
+                    className="table-row-hover"
+                  >
+                    <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent-cyan)' }}>
+                      {c.case_id}
+                    </td>
+                    <td style={{ padding: '10px 14px', color: 'var(--text-muted)' }}>
+                      #{c.source?.source_report_number}
+                    </td>
+                    <td style={{ padding: '10px 14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {c.incident?.crime_description}
+                      <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>
+                        {c.incident?.crime_domain}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <MapPin size={12} color="var(--accent-emerald)" />
+                        {c.location?.city}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      {c.weapon?.used || 'None Specified'}
+                    </td>
+                    <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>
+                      {dateStr || 'Unspecified'}
+                    </td>
+                    <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>
+                      {c.victim?.age ? `Age ${c.victim.age}` : 'Age ?'}, {c.victim?.gender || 'N/A'}
+                    </td>
+                    <td style={{ padding: '10px 14px' }}>
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        fontWeight: 600,
+                        backgroundColor: isClosed ? '#f0fdf4' : '#fff7ed',
+                        color: isClosed ? '#15803d' : '#c2410c',
+                      }}>
+                        {isClosed ? 'Closed' : 'Open'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onSelectCase(c.case_id); }}
+                        className="btn btn-ghost"
+                        style={{ padding: '3px 8px', fontSize: '11px' }}
+                      >
+                        Inspect
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Showing page {page} of {totalPages} ({total} total records)
-          </span>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => setPage(Math.max(1, page - 1))}
-              disabled={page === 1}
-              className="btn btn-secondary"
-              style={{ padding: '6px 12px' }}
-            >
-              <ChevronLeft size={14} />
-              <span>Previous</span>
-            </button>
-            <button
-              onClick={() => setPage(Math.min(totalPages, page + 1))}
-              disabled={page === totalPages}
-              className="btn btn-secondary"
-              style={{ padding: '6px 12px' }}
-            >
-              <span>Next</span>
-              <ChevronRight size={14} />
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Bottom Pagination */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
+        <button
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          disabled={page <= 1}
+          className="btn btn-secondary"
+          style={{ fontSize: '12px', padding: '6px 14px' }}
+        >
+          <ChevronLeft size={14} />
+          <span>Previous Page</span>
+        </button>
+        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+          Page {page} of {totalPages}
+        </span>
+        <button
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          disabled={page >= totalPages}
+          className="btn btn-secondary"
+          style={{ fontSize: '12px', padding: '6px 14px' }}
+        >
+          <span>Next Page</span>
+          <ChevronRight size={14} />
+        </button>
+      </div>
     </div>
   );
 };

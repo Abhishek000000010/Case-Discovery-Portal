@@ -1,94 +1,86 @@
-import { PersonEntity, LocationEntity, VehicleEntity, ObjectEntity } from './entity';
-
-export interface CasePersonRef {
-  person_id: string;
-  role: string;
+export interface SourceInfo {
+  dataset: string;
+  source_file: string;
+  source_report_number: number;
+  data_type: string;
 }
 
-export interface CaseLocationRef {
-  location_id: string;
-  role: string;
+export interface IncidentInfo {
+  crime_code: number;
+  crime_description: string;
+  crime_domain: string;
+  date_of_occurrence?: string | null;
+  date_reported?: string | null;
+  time_of_occurrence?: string | null;
 }
 
-export interface CaseVehicleRef {
-  vehicle_id: string;
-  role: string;
+export interface LocationInfo {
+  city: string;
 }
 
-export interface CaseObjectRef {
-  object_id: string;
-  role: string;
+export interface VictimInfo {
+  age?: number | null;
+  age_band?: string | null;
+  gender?: string | null;
 }
 
-export interface CaseEvent {
-  event_id: string;
-  type: string;
-  person_id?: string;
-  location_id?: string;
-  timestamp?: string;
-  description?: string;
+export interface WeaponInfo {
+  used?: string | null;
 }
 
-export interface CaseWitness {
-  person_id: string;
-  statement_id?: string;
-  role?: string;
+export interface InvestigationInfo {
+  police_deployed?: number | null;
+  case_closed: boolean;
+  date_case_closed?: string | null;
+  closure_duration_days?: number | null;
 }
 
-export interface CaseEvidence {
-  evidence_id: string;
-  type: string;
-  description?: string;
+export interface DerivedFeatures {
+  occurrence_year?: number | null;
+  occurrence_month?: number | null;
+  occurrence_month_name?: string | null;
+  occurrence_day_of_week?: string | null;
+  occurrence_hour?: number | null;
+  occurrence_minute?: number | null;
+  report_delay_hours?: number | null;
+  semantic_text?: string | null;
+  city_key?: string | null;
+  crime_key?: string | null;
+  crime_domain_key?: string | null;
+  weapon_key?: string | null;
+}
+
+export interface GraphEntities {
+  case_node: string;
+  city_node?: string | null;
+  crime_node?: string | null;
+  domain_node?: string | null;
+  weapon_node?: string | null;
 }
 
 export interface CaseModel {
   case_id: string;
-  case_type: string;
-  status: string;
-  reported_date?: string;
-  incident_date?: string;
-  incident_time_range?: string;
-  severity: 'low' | 'medium' | 'high' | 'critical' | string;
-  summary: string;
-  people_involved: CasePersonRef[];
-  locations: CaseLocationRef[];
-  vehicles: CaseVehicleRef[];
-  objects: CaseObjectRef[];
-  events: CaseEvent[];
-  modus_operandi: string[];
-  witnesses: CaseWitness[];
-  evidence: CaseEvidence[];
+  source: SourceInfo;
+  incident: IncidentInfo;
+  location: LocationInfo;
+  victim: VictimInfo;
+  weapon: WeaponInfo;
+  investigation: InvestigationInfo;
+  derived_features: DerivedFeatures;
+  graph_entities: GraphEntities;
   tags: string[];
+
+  // Convenience / mapped properties
+  case_type?: string;
+  status?: string;
+  city?: string;
+  incident_date?: string;
+  reported_date?: string;
   related_cases_count?: number;
-  people_count?: number;
-  location_names?: string[];
-}
-
-export interface EnrichedPerson {
-  person: PersonEntity;
-  role: string;
-}
-
-export interface EnrichedLocation {
-  location: LocationEntity;
-  role: string;
-}
-
-export interface EnrichedVehicle {
-  vehicle: VehicleEntity;
-  role: string;
-}
-
-export interface EnrichedObject {
-  object: ObjectEntity;
-  role: string;
 }
 
 export interface CaseDetailResponse {
   case: CaseModel;
-  enriched_people: EnrichedPerson[];
-  enriched_locations: EnrichedLocation[];
-  enriched_vehicles: EnrichedVehicle[];
-  enriched_objects: EnrichedObject[];
+  dimension_info: Record<string, any>;
   related_cases_count: number;
 }

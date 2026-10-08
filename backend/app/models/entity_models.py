@@ -2,38 +2,41 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
 
-class PersonEntity(BaseModel):
-    person_id: str
+class CityEntity(BaseModel):
+    city_id: str
     name: str
-    aliases: List[str] = Field(default_factory=list)
-    occupation: Optional[str] = None
-    home_location_id: Optional[str] = None
+    case_count: int = 0
     properties: Dict[str, Any] = Field(default_factory=dict)
 
 
-class LocationEntity(BaseModel):
-    location_id: str
+class CrimeCodeEntity(BaseModel):
+    crime_id: str
+    crime_code: int
+    case_count: int = 0
+    descriptions: List[str] = Field(default_factory=list)
+
+
+class CrimeDescriptionEntity(BaseModel):
+    crime_description_id: str
     name: str
-    city: Optional[str] = None
-    state: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    type: Optional[str] = None
-    properties: Dict[str, Any] = Field(default_factory=dict)
+    case_count: int = 0
 
 
-class VehicleEntity(BaseModel):
-    vehicle_id: str
-    registration: Optional[str] = None
-    type: Optional[str] = None
-    color: Optional[str] = None
-    owner_person_id: Optional[str] = None
-    properties: Dict[str, Any] = Field(default_factory=dict)
+class WeaponEntity(BaseModel):
+    weapon_id: str
+    name: str
+    case_count: int = 0
 
 
-class ObjectEntity(BaseModel):
-    object_id: str
-    type: Optional[str] = None
-    description: Optional[str] = None
-    serial_number: Optional[str] = None
-    properties: Dict[str, Any] = Field(default_factory=dict)
+class CrimeDomainEntity(BaseModel):
+    domain_id: str
+    name: str
+    case_count: int = 0
+
+
+class EntityListResponse(BaseModel):
+    cities: List[CityEntity] = Field(default_factory=list)
+    crime_descriptions: List[CrimeDescriptionEntity] = Field(default_factory=list)
+    weapons: List[WeaponEntity] = Field(default_factory=list)
+    crime_domains: List[CrimeDomainEntity] = Field(default_factory=list)
+    crime_codes: List[CrimeCodeEntity] = Field(default_factory=list)

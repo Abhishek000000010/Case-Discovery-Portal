@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Car, MapPin, Box, Filter, Search } from 'lucide-react';
-import { PersonEntity, VehicleEntity, LocationEntity, ObjectEntity } from '../types/entity';
-import { fetchPersons, fetchVehicles, fetchLocations, fetchObjects } from '../services/api';
+import { Building, Shield, Crosshair, Layers, Search } from 'lucide-react';
+import { CityEntity, CrimeDescriptionEntity, WeaponEntity, CrimeDomainEntity } from '../types/entity';
+import { fetchCities, fetchCrimes, fetchWeapons, fetchDomains } from '../services/api';
 import { EntityCard } from '../components/EntityCard';
 
 interface EntitiesProps {
@@ -10,13 +10,12 @@ interface EntitiesProps {
 }
 
 export const Entities: React.FC<EntitiesProps> = ({ onSelectCase, onExploreGraph }) => {
-  const [activeTab, setActiveTab] = useState<'persons' | 'vehicles' | 'locations' | 'objects'>('persons');
-  const [persons, setPersons] = useState<PersonEntity[]>([]);
-  const [vehicles, setVehicles] = useState<VehicleEntity[]>([]);
-  const [locations, setLocations] = useState<LocationEntity[]>([]);
-  const [objects, setObjects] = useState<ObjectEntity[]>([]);
+  const [activeTab, setActiveTab] = useState<'cities' | 'crimes' | 'weapons' | 'domains'>('cities');
+  const [cities, setCities] = useState<CityEntity[]>([]);
+  const [crimes, setCrimes] = useState<CrimeDescriptionEntity[]>([]);
+  const [weapons, setWeapons] = useState<WeaponEntity[]>([]);
+  const [domains, setCrimeDomains] = useState<CrimeDomainEntity[]>([]);
 
-  const [onlyRecurring, setOnlyRecurring] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -24,16 +23,16 @@ export const Entities: React.FC<EntitiesProps> = ({ onSelectCase, onExploreGraph
     async function loadAllEntities() {
       try {
         setLoading(true);
-        const [pData, vData, lData, oData] = await Promise.all([
-          fetchPersons(onlyRecurring),
-          fetchVehicles(),
-          fetchLocations(),
-          fetchObjects(),
+        const [cData, crData, wData, dData] = await Promise.all([
+          fetchCities(),
+          fetchCrimes(),
+          fetchWeapons(),
+          fetchDomains(),
         ]);
-        setPersons(pData);
-        setVehicles(vData);
-        setLocations(lData);
-        setObjects(oData);
+        setCities(cData);
+        setCrimes(crData);
+        setWeapons(wData);
+        setCrimeDomains(dData);
       } catch (err) {
         console.error(err);
       } finally {
@@ -41,27 +40,27 @@ export const Entities: React.FC<EntitiesProps> = ({ onSelectCase, onExploreGraph
       }
     }
     loadAllEntities();
-  }, [onlyRecurring]);
+  }, []);
 
   // Search filtering
-  const filteredPersons = persons.filter((p) => {
+  const filteredCities = cities.filter((c) => {
     const s = searchTerm.toLowerCase();
-    return p.name.toLowerCase().includes(s) || p.person_id.toLowerCase().includes(s) || (p.aliases || []).some(a => a.toLowerCase().includes(s));
+    return c.name.toLowerCase().includes(s) || c.city_id.toLowerCase().includes(s);
   });
 
-  const filteredVehicles = vehicles.filter((v) => {
+  const filteredCrimes = crimes.filter((cr) => {
     const s = searchTerm.toLowerCase();
-    return (v.registration || '').toLowerCase().includes(s) || v.vehicle_id.toLowerCase().includes(s) || (v.type || '').toLowerCase().includes(s);
+    return cr.name.toLowerCase().includes(s) || cr.crime_id.toLowerCase().includes(s);
   });
 
-  const filteredLocations = locations.filter((l) => {
+  const filteredWeapons = weapons.filter((w) => {
     const s = searchTerm.toLowerCase();
-    return l.name.toLowerCase().includes(s) || (l.city || '').toLowerCase().includes(s) || l.location_id.toLowerCase().includes(s);
+    return w.name.toLowerCase().includes(s) || w.weapon_id.toLowerCase().includes(s);
   });
 
-  const filteredObjects = objects.filter((o) => {
+  const filteredDomains = domains.filter((d) => {
     const s = searchTerm.toLowerCase();
-    return (o.description || '').toLowerCase().includes(s) || (o.type || '').toLowerCase().includes(s) || (o.serial_number || '').toLowerCase().includes(s);
+    return d.name.toLowerCase().includes(s) || d.domain_id.toLowerCase().includes(s);
   });
 
   return (
@@ -70,53 +69,41 @@ export const Entities: React.FC<EntitiesProps> = ({ onSelectCase, onExploreGraph
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            <Users size={24} color="var(--accent-emerald)" />
-            <span>Entities & Cross-Case Disambiguation Explorer</span>
+            <Building size={24} color="var(--accent-emerald)" />
+            <span>Structured Dimensional Entity Catalog</span>
           </h1>
           <p className="page-subtitle">
-            Catalog of tracked individuals, vehicles, locations, and evidence objects across all case files.
+            Ground-truth dimensional catalog across 29 cities, 21 crime classifications, 6 weapons, and 4 legal domains.
           </p>
         </div>
 
-        {/* Filters */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bg-surface)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
-            <Search size={14} color="var(--text-muted)" />
-            <input
-              type="text"
-              placeholder="Search current entity list..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                backgroundColor: 'transparent',
-                border: 'none',
-                outline: 'none',
-                color: 'var(--text-primary)',
-                fontSize: '12px',
-                width: '180px',
-              }}
-            />
-          </div>
-
-          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={onlyRecurring}
-              onChange={(e) => setOnlyRecurring(e.target.checked)}
-              style={{ accentColor: 'var(--accent-amber)' }}
-            />
-            <span>High Recurrence Only</span>
-          </label>
+        {/* Search */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bg-surface)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+          <Search size={14} color="var(--text-muted)" />
+          <input
+            type="text"
+            placeholder="Search dimensional entities..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              backgroundColor: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: 'var(--text-primary)',
+              fontSize: '12px',
+              width: '200px',
+            }}
+          />
         </div>
       </div>
 
       {/* Entity Tabs */}
       <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-subtle)', marginBottom: '20px' }}>
         {[
-          { id: 'persons', label: `Persons (${filteredPersons.length})`, icon: Users },
-          { id: 'vehicles', label: `Vehicles (${filteredVehicles.length})`, icon: Car },
-          { id: 'locations', label: `Locations (${filteredLocations.length})`, icon: MapPin },
-          { id: 'objects', label: `Evidence Objects (${filteredObjects.length})`, icon: Box },
+          { id: 'cities', label: `Cities (${filteredCities.length})`, icon: Building, color: 'var(--accent-emerald)' },
+          { id: 'crimes', label: `Crime Classifications (${filteredCrimes.length})`, icon: Shield, color: 'var(--accent-cyan)' },
+          { id: 'weapons', label: `Weapons (${filteredWeapons.length})`, icon: Crosshair, color: 'var(--accent-purple)' },
+          { id: 'domains', label: `Crime Domains (${filteredDomains.length})`, icon: Layers, color: '#0369a1' },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -131,8 +118,8 @@ export const Entities: React.FC<EntitiesProps> = ({ onSelectCase, onExploreGraph
                 padding: '10px 16px',
                 border: 'none',
                 background: 'transparent',
-                borderBottom: isActive ? '2px solid var(--accent-emerald)' : '2px solid transparent',
-                color: isActive ? 'var(--accent-emerald)' : 'var(--text-muted)',
+                borderBottom: isActive ? `2px solid ${tab.color}` : '2px solid transparent',
+                color: isActive ? tab.color : 'var(--text-muted)',
                 fontWeight: isActive ? 700 : 500,
                 fontSize: '13px',
                 cursor: 'pointer',
@@ -148,76 +135,60 @@ export const Entities: React.FC<EntitiesProps> = ({ onSelectCase, onExploreGraph
       {/* Entity Content */}
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '300px', color: 'var(--text-accent)', fontFamily: 'var(--font-mono)' }}>
-          Retrieving entity profiles and cross-case frequencies...
+          Retrieving real dataset dimensional entities...
         </div>
-      ) : activeTab === 'persons' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-          {filteredPersons.map((p) => (
+      ) : activeTab === 'cities' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+          {filteredCities.map((c) => (
             <EntityCard
-              key={p.person_id}
-              type="PERSON"
-              id={p.person_id}
-              title={p.name}
-              subtitle={`${p.occupation || 'Occupation unrecorded'} ${p.home_location_name ? `• Home: ${p.home_location_name}` : ''}`}
-              caseCount={p.case_count}
-              cases={p.cases}
-              roleDistribution={p.role_distribution}
-              isAnomaly={p.is_potential_anomaly}
-              anomalyLabel={p.anomaly_label}
-              notes={p.investigative_notes}
-              onSelectCase={onSelectCase}
+              key={c.city_id}
+              type="CITY"
+              id={c.city_id}
+              title={c.name}
+              subtitle={`Municipal Police Jurisdiction • Top crime: ${c.top_crime || 'General'}`}
+              caseCount={c.case_count}
               onExploreGraph={onExploreGraph}
             />
           ))}
         </div>
-      ) : activeTab === 'vehicles' ? (
+      ) : activeTab === 'crimes' ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-          {filteredVehicles.map((v) => (
+          {filteredCrimes.map((cr) => (
             <EntityCard
-              key={v.vehicle_id}
-              type="VEHICLE"
-              id={v.vehicle_id}
-              title={v.registration || v.vehicle_id}
-              subtitle={`${v.color || ''} ${v.type || ''} ${v.owner_name ? `• Registered to: ${v.owner_name}` : ''}`}
-              caseCount={v.case_count}
-              cases={v.cases}
-              roleDistribution={v.role_distribution}
-              isAnomaly={v.is_potential_anomaly}
-              anomalyLabel={v.anomaly_label}
-              notes={v.investigative_notes}
-              onSelectCase={onSelectCase}
+              key={cr.crime_id}
+              type="CRIME"
+              id={cr.crime_id}
+              title={cr.name}
+              subtitle={`Statutory Incident Classification • Top city: ${cr.top_city || 'Multiple'}`}
+              caseCount={cr.case_count}
               onExploreGraph={onExploreGraph}
             />
           ))}
         </div>
-      ) : activeTab === 'locations' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-          {filteredLocations.map((l) => (
+      ) : activeTab === 'weapons' ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+          {filteredWeapons.map((w) => (
             <EntityCard
-              key={l.location_id}
-              type="LOCATION"
-              id={l.location_id}
-              title={l.name}
-              subtitle={`${l.city || ''}, ${l.state || ''} • (${l.latitude}, ${l.longitude})`}
-              caseCount={l.case_count}
-              cases={l.cases}
-              onSelectCase={onSelectCase}
+              key={w.weapon_id}
+              type="WEAPON"
+              id={w.weapon_id}
+              title={w.name}
+              subtitle={`Tactical Weapon Category • Top Crime: ${w.top_crime || 'Multiple'}`}
+              caseCount={w.case_count}
               onExploreGraph={onExploreGraph}
             />
           ))}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
-          {filteredObjects.map((o) => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+          {filteredDomains.map((d) => (
             <EntityCard
-              key={o.object_id}
-              type="OBJECT"
-              id={o.object_id}
-              title={o.description || o.object_id}
-              subtitle={`Classification: ${o.type || 'N/A'} ${o.serial_number ? `• Serial: ${o.serial_number}` : ''}`}
-              caseCount={o.case_count}
-              cases={o.cases}
-              onSelectCase={onSelectCase}
+              key={d.domain_id}
+              type="DOMAIN"
+              id={d.domain_id}
+              title={d.name}
+              subtitle="Statutory Legal Domain"
+              caseCount={d.case_count}
               onExploreGraph={onExploreGraph}
             />
           ))}

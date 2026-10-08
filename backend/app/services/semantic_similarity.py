@@ -20,8 +20,8 @@ class BaseSemanticSimilarityService(ABC):
 class SemanticSimilarityService(BaseSemanticSimilarityService):
     """
     Local, fully-explainable TF-IDF + Cosine Similarity text comparison engine.
-    Extracts top overlapping high-tfidf keywords to provide explainability.
-    Designed with a clean interface so an embedding-based model can replace it seamlessly.
+    Extracts top overlapping salient keywords to provide explainability.
+    Built on top of real incident structured profile texts.
     """
 
     def __init__(self):
@@ -32,27 +32,20 @@ class SemanticSimilarityService(BaseSemanticSimilarityService):
         self.case_texts: Dict[str, str] = {}
 
     def _build_case_document(self, case: CaseModel) -> str:
-        tokens = [
-            case.summary or "",
-            case.case_type.replace("_", " ") if case.case_type else "",
-            " ".join(case.tags),
-            " ".join(case.modus_operandi)
-        ]
-
-        for ev in case.events:
-            if ev.description:
-                tokens.append(ev.description)
-            if ev.type:
-                tokens.append(ev.type.replace("_", " "))
-
-        for evi in case.evidence:
-            if evi.description:
-                tokens.append(evi.description)
-            if evi.type:
-                tokens.append(evi.type.replace("_", " "))
-
-        full_text = " ".join(tokens)
-        return normalize_text(full_text)
+        if case.derived_features and case.derived_features.semantic_text:
+            text = case.derived_features.semantic_text.replace("|", " ")
+        else:
+            tokens = [
+                case.incident.crime_description,
+                case.incident.crime_domain,
+                case.location.city,
+                case.weapon.used or "",
+                f"age_{case.victim.age_band or ''}",
+                f"gender_{case.victim.gender or ''}",
+                " ".join(case.tags),
+            ]
+            text = " ".join(t for t in tokens if t)
+        return normalize_text(text)
 
     def fit_corpus(self, cases: List[CaseModel]):
         self.case_texts = {c.case_id: self._build_case_document(c) for c in cases}
@@ -63,9 +56,10 @@ class SemanticSimilarityService(BaseSemanticSimilarityService):
 
         self.vectorizer = TfidfVectorizer(
             stop_words="english",
-            max_df=0.90,
-            min_df=1,
-            ngram_range=(1, 2)
+            max_df=0.95,
+            min_df=2,
+            ngram_range=(1, 2),
+            max_features=500
         )
         self.tfidf_matrix = self.vectorizer.fit_transform(documents)
         self.feature_names = self.vectorizer.get_feature_names_out()
@@ -85,12 +79,11 @@ class SemanticSimilarityService(BaseSemanticSimilarityService):
         sim = round(max(0.0, min(1.0, sim)), 3)
 
         evidence = []
-        if sim >= 0.25:
-            # Find common salient words with non-zero weights
+        if sim >= 0.30:
             row_a = vec_a.toarray().flatten()
             row_b = vec_b.toarray().flatten()
             prod = row_a * row_b
-            top_indices = np.argsort(prod)[::-1][:4]
+            top_indices = np.argsort(prod)[::-1][:3]
 
             salient_terms = [
                 self.feature_names[i]
@@ -99,8 +92,8 @@ class SemanticSimilarityService(BaseSemanticSimilarityService):
             ]
 
             if salient_terms:
-                evidence.append(f"Semantic narrative overlap (keywords: '{', '.join(salient_terms)}')")
-            elif sim >= 0.40:
-                evidence.append(f"Strong contextual vocabulary overlap ({sim * 100:.0f}%)")
+                evidence.append(f"Semantic profile alignment on descriptors: '{', '.join(salient_terms)}'")
+            else:
+                evidence.append(f"Contextual profile concordance ({int(sim * 100)}%)")
 
         return sim, evidence

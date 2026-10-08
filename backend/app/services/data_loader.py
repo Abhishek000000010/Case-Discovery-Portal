@@ -1,52 +1,61 @@
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Optional
 from backend.app.config import get_dataset_path
 from backend.app.models.case_models import CaseModel
 from backend.app.models.entity_models import (
-    PersonEntity,
-    LocationEntity,
-    VehicleEntity,
-    ObjectEntity,
+    CityEntity,
+    CrimeCodeEntity,
+    CrimeDescriptionEntity,
+    WeaponEntity,
+    CrimeDomainEntity,
+    EntityListResponse,
 )
 
 
 class CaseDataProvider(ABC):
     """
     Abstract interface for case data ingestion.
-    Allows seamlessly plugging in a future DocumentExtractionService / OCR pipeline
-    without modifying the relationship discovery engine.
+    Allows seamlessly plugging in a future DocumentExtractionProvider / OCR pipeline
+    without modifying the relationship discovery engine or knowledge graph.
     """
 
     @abstractmethod
     def load_cases(self) -> List[CaseModel]:
+        """Loads and returns all structured case incident records."""
         pass
 
     @abstractmethod
-    def load_entities(self) -> Dict[str, Any]:
+    def load_metadata(self) -> Dict[str, Any]:
+        """Returns provenance, record count, quality metrics, and limitations."""
         pass
 
     @abstractmethod
-    def load_ground_truth_for_evaluation_only(self) -> List[Dict[str, Any]]:
-        """
-        MUST ONLY be accessed by test/evaluation services.
-        Production relationship discovery MUST NEVER invoke this method.
-        """
+    def load_dimension_tables(self) -> Dict[str, Any]:
+        """Returns reference dimensions (cities, crime types, weapons, domains)."""
+        pass
+
+    @abstractmethod
+    def load_entities(self) -> EntityListResponse:
+        """Returns typed entity dimension collections."""
         pass
 
 
-class JSONCaseDataProvider(CaseDataProvider):
+class IndianCrimeJsonProvider(CaseDataProvider):
     """
-    Loads synthetic dataset from structured JSON file.
+    Production data provider loading the cleaned real Indian Crime dataset.
+    Preserves raw JSON fidelity with zero data fabrication.
     """
 
-    def __init__(self, file_path: Path = None):
+    def __init__(self, file_path: Optional[Path] = None):
         self.file_path = file_path or get_dataset_path()
         self._raw_data: Dict[str, Any] = {}
         self._load_raw()
 
     def _load_raw(self):
+        if not self.file_path.exists():
+            raise FileNotFoundError(f"Dataset file not found at: {self.file_path}")
         with open(self.file_path, "r", encoding="utf-8") as f:
             self._raw_data = json.load(f)
 
@@ -54,26 +63,30 @@ class JSONCaseDataProvider(CaseDataProvider):
         cases_raw = self._raw_data.get("cases", [])
         return [CaseModel(**c) for c in cases_raw]
 
-    def load_entities(self) -> Dict[str, Any]:
-        entities_raw = self._raw_data.get("entities", {})
-        persons = [PersonEntity(**p) for p in entities_raw.get("persons", [])]
-        locations = [LocationEntity(**l) for l in entities_raw.get("locations", [])]
-        vehicles = [VehicleEntity(**v) for v in entities_raw.get("vehicles", [])]
-        objects = [ObjectEntity(**o) for o in entities_raw.get("objects", [])]
+    def load_metadata(self) -> Dict[str, Any]:
+        return self._raw_data.get("metadata", {})
 
-        return {
-            "persons": persons,
-            "locations": locations,
-            "vehicles": vehicles,
-            "objects": objects,
-            "person_map": {p.person_id: p for p in persons},
-            "location_map": {l.location_id: l for l in locations},
-            "vehicle_map": {v.vehicle_id: v for v in vehicles},
-            "object_map": {o.object_id: o for o in objects},
-        }
+    def load_dimension_tables(self) -> Dict[str, Any]:
+        return self._raw_data.get("dimension_tables", {})
 
-    def load_ground_truth_for_evaluation_only(self) -> List[Dict[str, Any]]:
-        """
-        Isolated access for benchmark testing and evaluation only.
-        """
-        return self._raw_data.get("ground_truth_relationships_for_testing", [])
+    def load_entities(self) -> EntityListResponse:
+        dims = self.load_dimension_tables()
+
+        cities = [CityEntity(**c) for c in dims.get("cities", [])]
+        crime_codes = [CrimeCodeEntity(**cc) for cc in dims.get("crime_codes", [])]
+        crime_descs = [CrimeDescriptionEntity(**cd) for cd in dims.get("crime_descriptions", [])]
+        weapons = [WeaponEntity(**w) for w in dims.get("weapons", [])]
+        domains = [CrimeDomainEntity(**d) for d in dims.get("crime_domains", [])]
+
+        return EntityListResponse(
+            cities=cities,
+            crime_descriptions=crime_descs,
+            weapons=weapons,
+            crime_domains=domains,
+            crime_codes=crime_codes,
+        )
+
+
+# Backward-compatible alias
+JSONCaseDataProvider = IndianCrimeJsonProvider
+RealIndianCrimeDataProvider = IndianCrimeJsonProvider

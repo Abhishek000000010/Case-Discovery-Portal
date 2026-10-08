@@ -1,99 +1,101 @@
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
-from backend.app.models.entity_models import PersonEntity, LocationEntity, VehicleEntity, ObjectEntity
 
 
-class CasePersonRef(BaseModel):
-    person_id: str
-    role: str = "involved"
+class SourceInfo(BaseModel):
+    dataset: str = "Indian Crimes Dataset"
+    source_file: str = "crime_dataset_india.csv"
+    source_report_number: int
+    data_type: str = "public_dataset_record"
 
 
-class CaseLocationRef(BaseModel):
-    location_id: str
-    role: str = "scene"
+class IncidentInfo(BaseModel):
+    crime_code: int
+    crime_description: str
+    crime_domain: str
+    date_of_occurrence: Optional[str] = None
+    date_reported: Optional[str] = None
+    time_of_occurrence: Optional[str] = None
 
 
-class CaseVehicleRef(BaseModel):
-    vehicle_id: str
-    role: str = "associated"
+class LocationInfo(BaseModel):
+    city: str
 
 
-class CaseObjectRef(BaseModel):
-    object_id: str
-    role: str = "evidence_or_target"
+class VictimInfo(BaseModel):
+    age: Optional[int] = None
+    age_band: Optional[str] = None
+    gender: Optional[str] = None
 
 
-class CaseEvent(BaseModel):
-    event_id: str
-    type: str
-    person_id: Optional[str] = None
-    location_id: Optional[str] = None
-    timestamp: Optional[str] = None
-    description: Optional[str] = None
+class WeaponInfo(BaseModel):
+    used: Optional[str] = None
 
 
-class CaseWitness(BaseModel):
-    person_id: str
-    statement_id: Optional[str] = None
-    role: str = "witness"
+class InvestigationInfo(BaseModel):
+    police_deployed: Optional[int] = None
+    case_closed: bool = False
+    date_case_closed: Optional[str] = None
+    closure_duration_days: Optional[float] = None
 
 
-class CaseEvidence(BaseModel):
-    evidence_id: str
-    type: str
-    description: Optional[str] = None
+class DerivedFeatures(BaseModel):
+    occurrence_year: Optional[int] = None
+    occurrence_month: Optional[int] = None
+    occurrence_month_name: Optional[str] = None
+    occurrence_day_of_week: Optional[str] = None
+    occurrence_hour: Optional[int] = None
+    occurrence_minute: Optional[int] = None
+    report_delay_hours: Optional[float] = None
+    semantic_text: Optional[str] = None
+    city_key: Optional[str] = None
+    crime_key: Optional[str] = None
+    crime_domain_key: Optional[str] = None
+    weapon_key: Optional[str] = None
 
 
-class CaseSourceDocument(BaseModel):
-    document_id: str
-    type: str = "synthetic_case_report"
+class GraphEntities(BaseModel):
+    case_node: str
+    city_node: Optional[str] = None
+    crime_node: Optional[str] = None
+    domain_node: Optional[str] = None
+    weapon_node: Optional[str] = None
 
 
 class CaseModel(BaseModel):
     case_id: str
-    case_type: str
-    status: str
-    reported_date: Optional[str] = None
-    incident_date: Optional[str] = None
-    incident_time_range: Optional[str] = None
-    severity: str = "medium"
-    summary: str
-    people_involved: List[CasePersonRef] = Field(default_factory=list)
-    locations: List[CaseLocationRef] = Field(default_factory=list)
-    vehicles: List[CaseVehicleRef] = Field(default_factory=list)
-    objects: List[CaseObjectRef] = Field(default_factory=list)
-    events: List[CaseEvent] = Field(default_factory=list)
-    modus_operandi: List[str] = Field(default_factory=list)
-    witnesses: List[CaseWitness] = Field(default_factory=list)
-    evidence: List[CaseEvidence] = Field(default_factory=list)
-    source_documents: List[CaseSourceDocument] = Field(default_factory=list)
+    source: SourceInfo
+    incident: IncidentInfo
+    location: LocationInfo
+    victim: VictimInfo
+    weapon: WeaponInfo = Field(default_factory=WeaponInfo)
+    investigation: InvestigationInfo
+    derived_features: DerivedFeatures = Field(default_factory=DerivedFeatures)
+    graph_entities: GraphEntities
     tags: List[str] = Field(default_factory=list)
 
+    @property
+    def case_type(self) -> str:
+        return self.incident.crime_description
 
-class EnrichedPerson(BaseModel):
-    person: PersonEntity
-    role: str
+    @property
+    def status(self) -> str:
+        return "Closed" if self.investigation.case_closed else "Open"
 
+    @property
+    def city(self) -> str:
+        return self.location.city
 
-class EnrichedLocation(BaseModel):
-    location: LocationEntity
-    role: str
+    @property
+    def incident_date(self) -> Optional[str]:
+        return self.incident.date_of_occurrence or self.incident.time_of_occurrence or self.incident.date_reported
 
-
-class EnrichedVehicle(BaseModel):
-    vehicle: VehicleEntity
-    role: str
-
-
-class EnrichedObject(BaseModel):
-    object: ObjectEntity
-    role: str
+    @property
+    def reported_date(self) -> Optional[str]:
+        return self.incident.date_reported
 
 
 class CaseDetailResponse(BaseModel):
     case: CaseModel
-    enriched_people: List[EnrichedPerson] = Field(default_factory=list)
-    enriched_locations: List[EnrichedLocation] = Field(default_factory=list)
-    enriched_vehicles: List[EnrichedVehicle] = Field(default_factory=list)
-    enriched_objects: List[EnrichedObject] = Field(default_factory=list)
+    dimension_info: Dict[str, Any] = Field(default_factory=dict)
     related_cases_count: int = 0

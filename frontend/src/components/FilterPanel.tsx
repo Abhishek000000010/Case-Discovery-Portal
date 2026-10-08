@@ -1,13 +1,21 @@
 import React from 'react';
-import { Filter, X, ArrowUpDown } from 'lucide-react';
+import { X, ArrowUpDown } from 'lucide-react';
 
 interface FilterPanelProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  city: string;
+  onCityChange: (val: string) => void;
+  citiesList?: string[];
   crimeType: string;
   onCrimeTypeChange: (val: string) => void;
-  severity: string;
-  onSeverityChange: (val: string) => void;
+  crimeTypesList?: string[];
+  crimeDomain: string;
+  onCrimeDomainChange: (val: string) => void;
+  domainsList?: string[];
+  weapon: string;
+  onWeaponChange: (val: string) => void;
+  weaponsList?: string[];
   status: string;
   onStatusChange: (val: string) => void;
   sortBy: string;
@@ -15,16 +23,23 @@ interface FilterPanelProps {
   sortOrder: string;
   onSortOrderChange: (val: string) => void;
   onReset: () => void;
-  crimeTypesList?: string[];
 }
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({
   searchQuery,
   onSearchChange,
+  city,
+  onCityChange,
+  citiesList = [],
   crimeType,
   onCrimeTypeChange,
-  severity,
-  onSeverityChange,
+  crimeTypesList = [],
+  crimeDomain,
+  onCrimeDomainChange,
+  domainsList = [],
+  weapon,
+  onWeaponChange,
+  weaponsList = [],
   status,
   onStatusChange,
   sortBy,
@@ -32,17 +47,6 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   sortOrder,
   onSortOrderChange,
   onReset,
-  crimeTypesList = [
-    'burglary',
-    'theft',
-    'robbery',
-    'missing_person',
-    'unidentified_body',
-    'homicide',
-    'assault',
-    'vehicle_theft',
-    'fraud',
-  ],
 }) => {
   return (
     <div className="glass-panel" style={{ padding: '16px', marginBottom: '20px' }}>
@@ -52,13 +56,27 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
           <input
             type="text"
             className="form-input"
-            placeholder="Filter by summary or tag..."
+            placeholder="Search case ID, report #..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            style={{ minWidth: '220px' }}
+            style={{ minWidth: '180px' }}
           />
 
-          {/* Crime Type Select */}
+          {/* City / Jurisdiction */}
+          <select
+            className="form-input"
+            value={city}
+            onChange={(e) => onCityChange(e.target.value)}
+          >
+            <option value="all">All Jurisdictions (Cities)</option>
+            {citiesList.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+
+          {/* Crime Description */}
           <select
             className="form-input"
             value={crimeType}
@@ -67,22 +85,37 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             <option value="all">All Crime Classifications</option>
             {crimeTypesList.map((ct) => (
               <option key={ct} value={ct}>
-                {ct.replace(/_/g, ' ')}
+                {ct}
               </option>
             ))}
           </select>
 
-          {/* Severity Select */}
+          {/* Crime Domain */}
           <select
             className="form-input"
-            value={severity}
-            onChange={(e) => onSeverityChange(e.target.value)}
+            value={crimeDomain}
+            onChange={(e) => onCrimeDomainChange(e.target.value)}
           >
-            <option value="all">All Severities</option>
-            <option value="critical">Critical</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
+            <option value="all">All Crime Domains</option>
+            {domainsList.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+
+          {/* Weapon Used */}
+          <select
+            className="form-input"
+            value={weapon}
+            onChange={(e) => onWeaponChange(e.target.value)}
+          >
+            <option value="all">All Weapon Categories</option>
+            {weaponsList.map((w) => (
+              <option key={w} value={w}>
+                {w}
+              </option>
+            ))}
           </select>
 
           {/* Status Select */}
@@ -91,10 +124,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             value={status}
             onChange={(e) => onStatusChange(e.target.value)}
           >
-            <option value="all">All Case Statuses</option>
-            <option value="open">Open</option>
-            <option value="under_investigation">Under Investigation</option>
-            <option value="closed">Closed</option>
+            <option value="all">All Statuses</option>
+            <option value="open">Open Cases</option>
+            <option value="closed">Closed Cases</option>
           </select>
 
           {/* Sort By */}
@@ -105,10 +137,10 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               value={sortBy}
               onChange={(e) => onSortByChange(e.target.value)}
             >
-              <option value="reported_date">Reported Date</option>
-              <option value="incident_date">Incident Date</option>
-              <option value="severity">Severity Rank</option>
               <option value="case_id">Case ID</option>
+              <option value="incident_date">Incident Date</option>
+              <option value="police_deployed">Police Deployed</option>
+              <option value="closure_duration_days">Closure Duration</option>
             </select>
 
             <button

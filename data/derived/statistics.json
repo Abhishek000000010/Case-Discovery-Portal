@@ -1,0 +1,33 @@
+{
+  "total_cases": 40160,
+  "total_cities": 29,
+  "total_crime_types": 21,
+  "total_crime_codes": 500,
+  "total_crime_domains": 4,
+  "total_weapons": 6,
+  "cases_closed": 20062,
+  "open_cases": 20098,
+  "closure_rate_percent": 50.0,
+  "most_common_crime": {
+    "name": "BURGLARY",
+    "count": 1980
+  },
+  "most_active_city": {
+    "name": "Delhi",
+    "count": 5400
+  },
+  "highest_crime_month": {
+    "name": "March",
+    "count": 3727
+  },
+  "average_closure_duration_days": 88.1,
+  "average_report_delay_hours": 24.1,
+  "potential_anomalies_count": 32,
+  "provenance": {
+    "dataset": "Indian Crimes Dataset",
+    "source_file": "crime_dataset_india.csv",
+    "data_type": "Public Dataset Record",
+    "synthetic_records": 0,
+    "note": "Cleaned public dataset from Kaggle/NCRB data. Zero synthetic records."
+  }
+}

@@ -5,7 +5,6 @@ import {
   ZoomOut,
   Maximize2,
   X,
-  ExternalLink,
   Sliders,
   HelpCircle,
   Eye,
@@ -15,6 +14,9 @@ import {
 } from 'lucide-react';
 import { GraphData } from '../types/graph';
 import { ConfidenceBadge } from './ConfidenceBadge';
+import { RelationshipDetailDrawer } from './RelationshipDetailDrawer';
+import { fetchCaseRelationships } from '../services/api';
+import { RelationshipExplanation } from '../types/relationship';
 
 interface GraphViewerProps {
   data: GraphData;
@@ -31,7 +33,7 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
   centerNodeId,
   onSelectNode,
   onSelectCase,
-  minConfidence = 0.40,
+  minConfidence = 0.35,
   onConfidenceChange,
   height = '640px',
 }) => {
@@ -48,45 +50,47 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
     data: any;
   } | null>(null);
 
-  // Active filters for node types
+  const [investigationPair, setInvestigationPair] = useState<{
+    sourceId: string | null;
+    targetId: string | null;
+    isOpen: boolean;
+  }>({ sourceId: null, targetId: null, isOpen: false });
+
+  const [nodeRelatedCases, setNodeRelatedCases] = useState<RelationshipExplanation[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState<boolean>(false);
+
+  // Active filters for real entity node types
   const [activeTypes, setActiveTypes] = useState<Record<string, boolean>>({
     CASE: true,
-    PERSON: true,
-    LOCATION: true,
-    VEHICLE: true,
-    OBJECT: true,
-    EVENT: true,
+    CITY: true,
+    CRIME: true,
+    CRIME_DOMAIN: true,
+    WEAPON: true,
   });
 
   const toggleType = (type: string) => {
-    setActiveTypes(prev => ({ ...prev, [type]: !prev[type] }));
+    setActiveTypes((prev) => ({ ...prev, [type]: !prev[type] }));
   };
 
-  // Prepare filtered elements
-  const { filteredNodes, filteredEdges } = useMemo(() => {
-    let nodes = data.nodes;
-    if (filterMode === 'cases_only') {
-      nodes = nodes.filter(n => n.type === 'CASE');
-    } else {
-      nodes = nodes.filter(n => activeTypes[n.type] !== false);
-    }
+  const filteredNodes = useMemo(() => {
+    return (data.nodes || []).filter((n) => {
+      if (filterMode === 'cases_only' && n.type !== 'CASE') return false;
+      return activeTypes[n.type] ?? true;
+    });
+  }, [data.nodes, filterMode, activeTypes]);
 
-    const validNodeIds = new Set(nodes.map(n => n.id));
+  const nodeIdsSet = useMemo(() => new Set(filteredNodes.map((n) => n.id)), [filteredNodes]);
 
-    // When in cases_only mode, we can also synthesize direct case-to-case connections if present in edges
-    const edges = data.edges.filter(e =>
-      validNodeIds.has(e.source) &&
-      validNodeIds.has(e.target) &&
-      e.confidence >= minConfidence
-    );
-
-    return { filteredNodes: nodes, filteredEdges: edges };
-  }, [data, filterMode, activeTypes, minConfidence]);
+  const filteredEdges = useMemo(() => {
+    return (data.edges || []).filter((e) => {
+      if (e.confidence < minConfidence) return false;
+      return nodeIdsSet.has(e.source) && nodeIdsSet.has(e.target);
+    });
+  }, [data.edges, minConfidence, nodeIdsSet]);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Clean up previous instance cleanly
     if (cyRef.current) {
       try {
         cyRef.current.removeAllListeners();
@@ -99,7 +103,7 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
     }
 
     const cyElements = [
-      ...filteredNodes.map(n => {
+      ...filteredNodes.map((n) => {
         const isCenter = n.id === centerNodeId;
         return {
           group: 'nodes' as const,
@@ -112,13 +116,19 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
           },
         };
       }),
-      ...filteredEdges.map(e => ({
+      ...filteredEdges.map((e) => ({
         group: 'edges' as const,
         data: {
           id: e.id,
           source: e.source,
           target: e.target,
-          label: (e.relationship_type || 'RELATED').replace(/_/g, ' '),
+          label:
+            e.edge_label ||
+            (e.relationship_type === 'similar_incident_profile'
+              ? `${Math.round(e.confidence * 100)}% • ${(e.relationship_type_label || 'SIMILAR PROFILE').replace(/_/g, ' ')}`
+              : (e.relationship_type || 'RELATED').replace(/_/g, ' ')),
+          edge_label: e.edge_label,
+          relationship_type_label: e.relationship_type_label,
           relationship_type: e.relationship_type,
           confidence: e.confidence,
           category: e.category,
@@ -137,11 +147,11 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
           {
             selector: 'node',
             style: {
-              'label': 'data(label)',
+              label: 'data(label)',
               'font-family': 'Inter, system-ui, sans-serif',
               'font-size': '11px',
               'font-weight': 600,
-              'color': '#0f172a',
+              color: '#0f172a',
               'text-valign': 'bottom',
               'text-margin-y': 6,
               'text-outline-color': '#ffffff',
@@ -152,8 +162,8 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
               'background-color': '#94a3b8',
               'border-width': 2,
               'border-color': '#cbd5e1',
-              'width': 38,
-              'height': 38,
+              width: 38,
+              height: 38,
               'transition-property': 'opacity, border-width, border-color',
               'transition-duration': 0.2,
             },
@@ -161,74 +171,62 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
           {
             selector: 'node[type = "CASE"]',
             style: {
-              'shape': 'round-rectangle',
+              shape: 'round-rectangle',
               'background-color': '#e0f2fe',
               'border-width': 3,
               'border-color': '#0284c7',
-              'width': 48,
-              'height': 48,
-              'color': '#0369a1',
+              width: 48,
+              height: 48,
+              color: '#0369a1',
               'font-weight': 700,
             },
           },
           {
-            selector: 'node[type = "PERSON"]',
+            selector: 'node[type = "CITY"]',
             style: {
-              'shape': 'ellipse',
-              'background-color': '#dcfce7',
+              shape: 'diamond',
+              'background-color': '#d1fae5',
               'border-width': 2.5,
               'border-color': '#059669',
-              'width': 40,
-              'height': 40,
-              'color': '#047857',
+              width: 44,
+              height: 44,
+              color: '#047857',
             },
           },
           {
-            selector: 'node[type = "LOCATION"]',
+            selector: 'node[type = "CRIME"]',
             style: {
-              'shape': 'diamond',
-              'background-color': '#cffafe',
-              'border-width': 2.5,
-              'border-color': '#0891b2',
-              'width': 44,
-              'height': 44,
-              'color': '#0e7490',
-            },
-          },
-          {
-            selector: 'node[type = "VEHICLE"]',
-            style: {
-              'shape': 'hexagon',
+              shape: 'round-hexagon',
               'background-color': '#fef3c7',
               'border-width': 2.5,
               'border-color': '#d97706',
-              'width': 42,
-              'height': 42,
-              'color': '#b45309',
+              width: 44,
+              height: 44,
+              color: '#b45309',
             },
           },
           {
-            selector: 'node[type = "OBJECT"]',
+            selector: 'node[type = "CRIME_DOMAIN"]',
             style: {
-              'shape': 'vee',
-              'background-color': '#f3e8ff',
+              shape: 'hexagon',
+              'background-color': '#e0e7ff',
               'border-width': 2.5,
-              'border-color': '#7c3aed',
-              'width': 36,
-              'height': 36,
-              'color': '#6d28d9',
+              'border-color': '#4f46e5',
+              width: 42,
+              height: 42,
+              color: '#4338ca',
             },
           },
           {
-            selector: 'node[type = "EVENT"]',
+            selector: 'node[type = "WEAPON"]',
             style: {
-              'shape': 'triangle',
+              shape: 'tag',
               'background-color': '#ffe4e6',
               'border-width': 2.5,
               'border-color': '#e11d48',
-              'width': 34,
-              'height': 34,
-              'color': '#be123c',
+              width: 38,
+              height: 38,
+              color: '#be123c',
             },
           },
           {
@@ -237,183 +235,147 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
               'border-width': 5,
               'border-color': '#0284c7',
               'background-color': '#38bdf8',
-              'width': 60,
-              'height': 60,
+              width: 60,
+              height: 60,
               'font-size': '13px',
               'font-weight': 800,
-              'color': '#0c4a6e',
+              color: '#0c4a6e',
             },
           },
           {
             selector: 'edge',
             style: {
-              'width': 2,
-              'line-color': '#94a3b8',
-              'target-arrow-color': '#64748b',
+              width: 2,
+              'line-color': '#cbd5e1',
+              'target-arrow-color': '#cbd5e1',
               'target-arrow-shape': 'triangle',
               'curve-style': 'bezier',
-              'opacity': 0.75,
-              'label': 'data(label)',
-              'font-size': '9.5px',
-              'font-family': 'Inter, system-ui, sans-serif',
-              'font-weight': 600,
-              'color': '#334155',
+              'arrow-scale': 0.8,
+              opacity: 0.8,
+              label: 'data(label)',
+              'font-size': '9px',
+              'font-weight': 500,
+              color: '#64748b',
               'text-rotation': 'autorotate',
-              'text-margin-y': -7,
               'text-background-color': '#ffffff',
-              'text-background-opacity': 0.95,
-              'text-background-padding': '3px',
-              'text-border-width': 1,
-              'text-border-color': '#e2e8f0',
-              'text-border-opacity': 0.8,
-              'transition-property': 'opacity, width, line-color',
-              'transition-duration': 0.2,
+              'text-background-opacity': 0.9,
+              'text-background-padding': '2px',
             },
           },
           {
-            selector: 'edge[category = "DIRECT"]',
+            selector: 'edge[category = "VERY HIGH"]',
             style: {
-              'width': 3.5,
-              'line-color': '#6366f1',
-              'target-arrow-color': '#6366f1',
-              'opacity': 0.95,
-              'color': '#4338ca',
+              'line-color': '#059669',
+              'target-arrow-color': '#059669',
+              width: 3.5,
+              opacity: 1.0,
             },
           },
           {
-            selector: 'edge[category = "STRONG"]',
+            selector: 'edge[category = "HIGH"]',
             style: {
-              'width': 2.8,
               'line-color': '#0284c7',
               'target-arrow-color': '#0284c7',
-              'opacity': 0.9,
-              'color': '#0369a1',
+              width: 2.8,
+              opacity: 0.9,
             },
           },
           {
             selector: 'edge[category = "MODERATE"]',
             style: {
-              'width': 2,
-              'line-style': 'dashed',
-              'line-color': '#d97706',
-              'target-arrow-color': '#d97706',
-              'color': '#b45309',
+              'line-color': '#f59e0b',
+              'target-arrow-color': '#f59e0b',
+              width: 2.0,
+              opacity: 0.7,
             },
           },
           {
-            selector: 'edge[category = "WEAK"]',
+            selector: 'edge[relationship_type = "similar_incident_profile"]',
             style: {
-              'width': 1.5,
-              'line-style': 'dotted',
-              'line-color': '#cbd5e1',
-              'target-arrow-color': '#cbd5e1',
-              'color': '#64748b',
+              'line-style': 'dashed',
             },
           },
-          // Highlight classes for focus
+          {
+            selector: '.highlighted',
+            style: {
+              'border-color': '#0284c7',
+              'border-width': 4,
+              opacity: 1.0,
+              'z-index': 999,
+            },
+          },
           {
             selector: '.dimmed',
             style: {
-              'opacity': 0.15,
-            },
-          },
-          {
-            selector: '.highlighted-node',
-            style: {
-              'opacity': 1,
-              'border-width': 4,
-              'border-color': '#2563eb',
-            },
-          },
-          {
-            selector: '.highlighted-edge',
-            style: {
-              'opacity': 1,
-              'width': 4,
-              'line-color': '#2563eb',
-              'target-arrow-color': '#2563eb',
+              opacity: 0.2,
             },
           },
         ],
         layout: {
           name: layoutName,
-          concentric: (node: any) => {
-            if (node.data('isCenter')) return 10;
-            if (node.data('type') === 'CASE') return 7;
-            return 4;
-          },
-          levelWidth: () => 2,
-          minNodeSpacing: 50,
-          animate: false, // avoid async frame issues
-        },
+          padding: 50,
+          animate: true,
+          animationDuration: 500,
+        } as any,
       });
 
-      // Highlight neighborhood helper
-      const highlightNeighborhood = (node: any) => {
-        cy.elements().removeClass('highlighted-node highlighted-edge dimmed');
-        const neighborhood = node.neighborhood().add(node);
-        cy.elements().not(neighborhood).addClass('dimmed');
-        node.addClass('highlighted-node');
-        neighborhood.nodes().addClass('highlighted-node');
-        neighborhood.edges().addClass('highlighted-edge');
-      };
-
-      const clearHighlight = () => {
-        cy.elements().removeClass('highlighted-node highlighted-edge dimmed');
-      };
-
-      cy.on('mouseover', 'node', (evt: EventObject) => {
-        const node = evt.target;
-        const d = node.data();
-        const connectedEdges = node.connectedEdges();
-        setHoveredNodeInfo({
-          id: d.id,
-          label: d.label,
-          type: d.type,
-          connections: connectedEdges.length,
-        });
-        highlightNeighborhood(node);
-      });
-
-      cy.on('mouseout', 'node', () => {
-        setHoveredNodeInfo(null);
-        if (!selectedElement) {
-          clearHighlight();
-        }
-      });
-
+      // Events
       cy.on('tap', 'node', (evt: EventObject) => {
         const node = evt.target;
-        const nodeData = node.data();
-        setSelectedElement({ type: 'node', data: nodeData });
-        highlightNeighborhood(node);
-        if (onSelectNode) {
-          onSelectNode(nodeData.id, nodeData.type);
+        setSelectedElement({ type: 'node', data: node.data() });
+        if (node.data('type') === 'CASE') {
+          setLoadingRelated(true);
+          fetchCaseRelationships(node.id(), minConfidence, 4)
+            .then((rels) => setNodeRelatedCases(rels))
+            .catch(() => setNodeRelatedCases([]))
+            .finally(() => setLoadingRelated(false));
+        } else {
+          setNodeRelatedCases([]);
         }
+        if (onSelectNode) onSelectNode(node.id(), node.data('type'));
       });
 
       cy.on('tap', 'edge', (evt: EventObject) => {
         const edge = evt.target;
         setSelectedElement({ type: 'edge', data: edge.data() });
-      });
-
-      cy.on('tap', (evt: EventObject) => {
-        if (evt.target === cy) {
-          setSelectedElement(null);
-          clearHighlight();
+        const src = edge.data('source');
+        const tgt = edge.data('target');
+        if (src && tgt && src.startsWith('IND-CASE') && tgt.startsWith('IND-CASE')) {
+          setInvestigationPair({ sourceId: src, targetId: tgt, isOpen: true });
         }
       });
 
+      cy.on('mouseover', 'node', (evt: EventObject) => {
+        const node = evt.target;
+        const connectedEdges = node.connectedEdges();
+        const connectedNodes = connectedEdges.connectedNodes();
+
+        cy.elements().addClass('dimmed');
+        node.removeClass('dimmed').addClass('highlighted');
+        connectedEdges.removeClass('dimmed').addClass('highlighted');
+        connectedNodes.removeClass('dimmed').addClass('highlighted');
+
+        setHoveredNodeInfo({
+          id: node.id(),
+          label: node.data('label') || node.id(),
+          type: node.data('type'),
+          connections: connectedEdges.length,
+        });
+      });
+
+      cy.on('mouseout', 'node', () => {
+        cy.elements().removeClass('dimmed').removeClass('highlighted');
+        setHoveredNodeInfo(null);
+      });
+
       cyRef.current = cy;
-    } catch (err) {
-      console.error('Error creating cytoscape instance:', err);
+    } catch (e) {
+      console.error('Cytoscape render error:', e);
     }
 
     return () => {
       if (cyRef.current) {
         try {
-          cyRef.current.removeAllListeners();
-          cyRef.current.stop();
           cyRef.current.destroy();
         } catch (e) {
           // ignore
@@ -425,80 +387,23 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
 
   const handleZoomIn = () => cyRef.current?.zoom(cyRef.current.zoom() * 1.25);
   const handleZoomOut = () => cyRef.current?.zoom(cyRef.current.zoom() * 0.8);
-  const handleFit = () => cyRef.current?.fit(undefined, 35);
+  const handleFit = () => cyRef.current?.fit(undefined, 40);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height, backgroundColor: '#ffffff', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-sm)' }}>
-      {/* Cytoscape Canvas */}
+    <div style={{ position: 'relative', width: '100%', height, backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 
-      {/* Top Left: Controls & View Mode Toggle */}
-      <div style={{
-        position: 'absolute',
-        top: '12px',
-        left: '12px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        zIndex: 10,
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(6px)',
-        padding: '6px 12px',
-        borderRadius: '8px',
-        border: '1px solid var(--border-subtle)',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-      }}>
-        {/* View Mode Toggle */}
-        <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '2px', borderRadius: '6px' }}>
-          <button
-            onClick={() => setFilterMode('all')}
-            style={{
-              fontSize: '11px',
-              fontWeight: 600,
-              padding: '4px 10px',
-              borderRadius: '4px',
-              border: 'none',
-              backgroundColor: filterMode === 'all' ? '#ffffff' : 'transparent',
-              color: filterMode === 'all' ? '#0f172a' : '#64748b',
-              boxShadow: filterMode === 'all' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
-              cursor: 'pointer',
-            }}
-          >
-            All Entities
-          </button>
-          <button
-            onClick={() => setFilterMode('cases_only')}
-            style={{
-              fontSize: '11px',
-              fontWeight: 600,
-              padding: '4px 10px',
-              borderRadius: '4px',
-              border: 'none',
-              backgroundColor: filterMode === 'cases_only' ? '#ffffff' : 'transparent',
-              color: filterMode === 'cases_only' ? '#0284c7' : '#64748b',
-              boxShadow: filterMode === 'cases_only' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
-              cursor: 'pointer',
-            }}
-          >
-            Cases Only
-          </button>
-        </div>
-
-        <div style={{ height: '16px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
-
-        {/* Layout dropdown */}
+      {/* Top Left Toolbar */}
+      <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10, backgroundColor: '#ffffff', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-sm)' }}>
         <select
           value={layoutName}
           onChange={(e) => setLayoutName(e.target.value as any)}
           style={{
             backgroundColor: '#f8fafc',
-            color: 'var(--text-primary)',
             border: '1px solid var(--border-subtle)',
             borderRadius: '4px',
             padding: '4px 8px',
             fontSize: '11px',
-            outline: 'none',
-            fontFamily: 'var(--font-sans)',
             fontWeight: 500,
           }}
         >
@@ -510,7 +415,6 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
 
         <div style={{ height: '16px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
 
-        {/* Zoom & Fit */}
         <button onClick={handleZoomIn} className="btn btn-ghost" style={{ padding: '5px' }} title="Zoom In">
           <ZoomIn size={14} />
         </button>
@@ -521,7 +425,6 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
           <Maximize2 size={14} />
         </button>
 
-        {/* Guide button */}
         <button
           onClick={() => setShowGuide(!showGuide)}
           style={{
@@ -539,182 +442,102 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
           }}
         >
           <HelpCircle size={13} />
-          <span>How to read</span>
+          <span>Legend</span>
         </button>
       </div>
 
-      {/* Top Center: Live Hovered Node Connection Pill */}
+      {/* Top Center Hovered Node Pill */}
       {hoveredNodeInfo && (
-        <div style={{
-          position: 'absolute',
-          top: '12px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 10,
-          backgroundColor: '#0f172a',
-          color: '#ffffff',
-          padding: '6px 14px',
-          borderRadius: '20px',
-          fontSize: '12px',
-          fontWeight: 600,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          pointerEvents: 'none',
-        }}>
-          <span style={{ textTransform: 'capitalize', color: '#38bdf8' }}>{hoveredNodeInfo.type}:</span>
-          <span>{hoveredNodeInfo.label}</span>
-          <span style={{ backgroundColor: '#1e293b', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', color: '#94a3b8' }}>
-            {hoveredNodeInfo.connections} connected link{hoveredNodeInfo.connections === 1 ? '' : 's'}
-          </span>
+        <div style={{ position: 'absolute', top: '12px', left: '50%', transform: 'translateX(-50%)', zIndex: 15, backgroundColor: '#0f172a', color: '#ffffff', padding: '5px 12px', borderRadius: '20px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+          <span style={{ fontWeight: 700 }}>{hoveredNodeInfo.label}</span>
+          <span style={{ opacity: 0.6 }}>•</span>
+          <span style={{ opacity: 0.8 }}>{hoveredNodeInfo.type}</span>
+          <span style={{ opacity: 0.6 }}>•</span>
+          <span style={{ color: '#38bdf8', fontWeight: 600 }}>{hoveredNodeInfo.connections} links</span>
         </div>
       )}
 
-      {/* Top Right: Entity Type Toggle Filter Pills */}
-      {filterMode === 'all' && (
-        <div style={{
-          position: 'absolute',
-          top: '12px',
-          right: '12px',
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '5px',
-          zIndex: 10,
-        }}>
-          {Object.entries(activeTypes).map(([type, isActive]) => {
-            const colorMap: Record<string, string> = {
-              CASE: '#0284c7',
-              PERSON: '#059669',
-              LOCATION: '#0891b2',
-              VEHICLE: '#d97706',
-              OBJECT: '#7c3aed',
-              EVENT: '#e11d48',
-            };
-            const color = colorMap[type] || '#475569';
-            return (
-              <button
-                key={type}
-                onClick={() => toggleType(type)}
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  padding: '3px 8px',
-                  borderRadius: '4px',
-                  border: `1px solid ${isActive ? color : '#e2e8f0'}`,
-                  backgroundColor: isActive ? '#ffffff' : '#f8fafc',
-                  color: isActive ? color : '#94a3b8',
-                  cursor: 'pointer',
-                  boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {type}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* Top Right Entity Filter Pills */}
+      <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', flexWrap: 'wrap', gap: '5px', zIndex: 10 }}>
+        {Object.entries(activeTypes).map(([type, isActive]) => {
+          const colorMap: Record<string, string> = {
+            CASE: '#0284c7',
+            CITY: '#059669',
+            CRIME: '#d97706',
+            CRIME_DOMAIN: '#4f46e5',
+            WEAPON: '#e11d48',
+          };
+          const color = colorMap[type] || '#475569';
+          return (
+            <button
+              key={type}
+              onClick={() => toggleType(type)}
+              style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                padding: '3px 8px',
+                borderRadius: '4px',
+                border: `1px solid ${isActive ? color : '#e2e8f0'}`,
+                backgroundColor: isActive ? '#ffffff' : '#f8fafc',
+                color: isActive ? color : '#94a3b8',
+                cursor: 'pointer',
+                boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
+              }}
+            >
+              {type}
+            </button>
+          );
+        })}
+      </div>
 
-      {/* How to Read Popover Guide */}
+      {/* How to Read Popover */}
       {showGuide && (
-        <div style={{
-          position: 'absolute',
-          top: '56px',
-          left: '12px',
-          width: '380px',
-          backgroundColor: '#ffffff',
-          border: '1px solid var(--border-medium)',
-          borderRadius: '8px',
-          boxShadow: 'var(--shadow-lg)',
-          padding: '16px',
-          zIndex: 25,
-          fontSize: '12px',
-          lineHeight: 1.5,
-        }}>
+        <div style={{ position: 'absolute', top: '56px', left: '12px', width: '380px', backgroundColor: '#ffffff', border: '1px solid var(--border-medium)', borderRadius: '8px', boxShadow: 'var(--shadow-lg)', padding: '16px', zIndex: 25, fontSize: '12px', lineHeight: 1.5 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <div style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Info size={15} color="var(--accent-cyan)" />
-              <span>How to Read This Relationship Graph</span>
+              <span>Entity & Relationship Legend</span>
             </div>
             <button onClick={() => setShowGuide(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-              <X size={14} />
+              <X size={15} />
             </button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', color: 'var(--text-secondary)' }}>
-            <div>
-              <strong style={{ color: '#0284c7' }}>1. The Center Node:</strong> The primary focal case under investigation (e.g. <strong>{centerNodeId || 'CASE003'}</strong>) is shown in the center with a bright cyan highlight.
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#e0f2fe', border: '2px solid #0284c7' }} />
+              <span><strong>CASE:</strong> Real incident report dossier node</span>
             </div>
-            <div>
-              <strong style={{ color: '#059669' }}>2. Surrounding Entities:</strong> Green circles are individuals (suspects/victims), yellow hexagons are vehicles, and blue diamonds are crime scenes.
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#d1fae5', border: '2px solid #059669' }} />
+              <span><strong>CITY:</strong> Municipal jurisdiction (29 cities)</span>
             </div>
-            <div>
-              <strong style={{ color: '#4f46e5' }}>3. Connecting Lines:</strong> Connecting lines reveal shared evidence (same suspect, identical vehicle, overlapping MO). Thick lines indicate verified forensic or witness links.
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#fef3c7', border: '2px solid #d97706' }} />
+              <span><strong>CRIME:</strong> Statutory crime classification</span>
             </div>
-            <div style={{ backgroundColor: '#f0f9ff', padding: '8px', borderRadius: '6px', color: '#0369a1', fontSize: '11px' }}>
-              💡 <strong>Pro Tip:</strong> Click any node to open its full intelligence dossier in the right-hand inspector. Switch to <strong>"Cases Only"</strong> at top-left to see direct case-to-case connections.
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#e0e7ff', border: '2px solid #4f46e5' }} />
+              <span><strong>CRIME DOMAIN:</strong> Broad crime category</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#ffe4e6', border: '2px solid #e11d48' }} />
+              <span><strong>WEAPON:</strong> Weapon category deployed</span>
+            </div>
+            <div style={{ marginTop: '8px', borderTop: '1px solid var(--border-subtle)', paddingTop: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
+              Dashed lines represent <em>similar incident profiles</em> discovered through empirical concordance.
             </div>
           </div>
         </div>
       )}
 
-      {/* Bottom Confidence Slider */}
-      {onConfidenceChange && (
-        <div style={{
-          position: 'absolute',
-          bottom: '12px',
-          left: '12px',
-          zIndex: 10,
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(6px)',
-          padding: '6px 14px',
-          borderRadius: '8px',
-          border: '1px solid var(--border-subtle)',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-        }}>
-          <Sliders size={13} color="var(--accent-cyan)" />
-          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-            Min Match Confidence: <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{(minConfidence * 100).toFixed(0)}%</strong>
-          </span>
-          <input
-            type="range"
-            min="0.2"
-            max="0.9"
-            step="0.05"
-            value={minConfidence}
-            onChange={(e) => onConfidenceChange(parseFloat(e.target.value))}
-            style={{ width: '90px', cursor: 'pointer' }}
-          />
-        </div>
-      )}
-
-      {/* Element Inspector Drawer */}
+      {/* Selected Element Drawer */}
       {selectedElement && (
-        <div style={{
-          position: 'absolute',
-          bottom: '12px',
-          right: '12px',
-          width: '340px',
-          maxHeight: '440px',
-          overflowY: 'auto',
-          backgroundColor: '#ffffff',
-          border: '1px solid var(--border-medium)',
-          borderRadius: '8px',
-          boxShadow: 'var(--shadow-lg)',
-          padding: '16px',
-          zIndex: 20,
-        }}>
+        <div style={{ position: 'absolute', bottom: '16px', right: '16px', width: '340px', maxHeight: '440px', overflowY: 'auto', backgroundColor: '#ffffff', border: '1px solid var(--border-medium)', borderRadius: '8px', boxShadow: 'var(--shadow-lg)', padding: '16px', zIndex: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
             <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--accent-cyan)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
-              {selectedElement.type === 'node' ? `${selectedElement.data.type} FILE` : 'RELATIONSHIP LINK EXPLAINER'}
+              {selectedElement.type === 'node' ? `${selectedElement.data.type} NODE` : 'RELATIONSHIP LINK EXPLAINER'}
             </span>
-            <button
-              onClick={() => setSelectedElement(null)}
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
-            >
+            <button onClick={() => setSelectedElement(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
               <X size={15} />
             </button>
           </div>
@@ -733,7 +556,7 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
                   {Object.entries(selectedElement.data.properties).map(([k, v]) => (
                     <div key={k} style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ color: 'var(--text-muted)' }}>{k.replace(/_/g, ' ')}:</span>
-                      <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{Array.isArray(v) ? v.join(', ') : String(v || 'N/A')}</span>
+                      <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{String(v || 'N/A')}</span>
                     </div>
                   ))}
                 </div>
@@ -745,9 +568,76 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
                   className="btn btn-primary"
                   style={{ width: '100%', marginTop: '14px', fontSize: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}
                 >
-                  <span>Open Full Case Dossier</span>
+                  <span>Open Case Dossier</span>
                   <ArrowRight size={13} />
                 </button>
+              )}
+
+              {/* Top Relationships for Case (Section 12) */}
+              {selectedElement.data.type === 'CASE' && (
+                <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    Top Related Cases
+                  </div>
+
+                  {loadingRelated ? (
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>
+                      Retrieving top related cases...
+                    </div>
+                  ) : nodeRelatedCases.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {nodeRelatedCases.map((rel, idx) => (
+                        <div
+                          key={rel.target_case || idx}
+                          style={{
+                            padding: '8px 10px',
+                            backgroundColor: '#f8fafc',
+                            border: '1px solid var(--border-subtle)',
+                            borderRadius: '6px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: 'var(--accent-cyan)' }}>
+                              {rel.target_case}
+                            </span>
+                            <ConfidenceBadge confidence={rel.confidence} category={rel.category} />
+                          </div>
+                          <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                            {rel.edge_label || rel.relationship_type_label || 'Similar Incident Profile'}
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              onClick={() =>
+                                setInvestigationPair({
+                                  sourceId: selectedElement.data.id,
+                                  targetId: rel.target_case,
+                                  isOpen: true,
+                                })
+                              }
+                              className="btn btn-secondary"
+                              style={{ flex: 1, padding: '3px 6px', fontSize: '10.5px' }}
+                            >
+                              Why related?
+                            </button>
+                            {onSelectCase && (
+                              <button
+                                onClick={() => onSelectCase(rel.target_case)}
+                                className="btn btn-ghost"
+                                style={{ padding: '3px 6px', fontSize: '10.5px' }}
+                              >
+                                View
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      No related cases found above confidence threshold.
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           ) : (
@@ -778,20 +668,30 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
                 </div>
               )}
 
-              {onSelectCase && (
-                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+              {/* Explain Relationship Button */}
+              {selectedElement.data.source?.startsWith('IND-CASE') &&
+                selectedElement.data.target?.startsWith('IND-CASE') && (
                   <button
-                    onClick={() => onSelectCase(selectedElement.data.source)}
-                    className="btn btn-secondary"
-                    style={{ flex: 1, fontSize: '11px', padding: '6px' }}
+                    onClick={() =>
+                      setInvestigationPair({
+                        sourceId: selectedElement.data.source,
+                        targetId: selectedElement.data.target,
+                        isOpen: true,
+                      })
+                    }
+                    className="btn btn-primary"
+                    style={{ width: '100%', marginBottom: '8px', fontSize: '11px', padding: '7px' }}
                   >
+                    Why Related? (Full Explanation)
+                  </button>
+                )}
+
+              {onSelectCase && (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <button onClick={() => onSelectCase(selectedElement.data.source)} className="btn btn-secondary" style={{ flex: 1, fontSize: '11px', padding: '6px' }}>
                     View {selectedElement.data.source}
                   </button>
-                  <button
-                    onClick={() => onSelectCase(selectedElement.data.target)}
-                    className="btn btn-secondary"
-                    style={{ flex: 1, fontSize: '11px', padding: '6px' }}
-                  >
+                  <button onClick={() => onSelectCase(selectedElement.data.target)} className="btn btn-secondary" style={{ flex: 1, fontSize: '11px', padding: '6px' }}>
                     View {selectedElement.data.target}
                   </button>
                 </div>
@@ -800,6 +700,15 @@ export const GraphViewer: React.FC<GraphViewerProps> = ({
           )}
         </div>
       )}
+
+      {/* Forensic Relationship Investigation Drawer (Sections 1-15) */}
+      <RelationshipDetailDrawer
+        sourceCaseId={investigationPair.sourceId}
+        targetCaseId={investigationPair.targetId}
+        isOpen={investigationPair.isOpen}
+        onClose={() => setInvestigationPair((prev) => ({ ...prev, isOpen: false }))}
+        onSelectCase={onSelectCase}
+      />
     </div>
   );
 };
